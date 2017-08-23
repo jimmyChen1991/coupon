@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="#f2f2f2">
+    <include
+        android:id="@+id/top"
+        layout="@layout/searcbar"/>
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_contacts"
+        android:layout_below="@id/top"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="@dimen/dp_15"
+        android:paddingRight="@dimen/dp_50"
+        android:paddingBottom="90dp"/>
+
+    <com.gjiazhe.wavesidebar.WaveSideBar
+        android:id="@+id/side_bar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingRight="10dp"
+        android:paddingLeft="8dp"
+        android:visibility="gone"
+        app:sidebar_max_offset="15dp"
+        app:sidebar_text_size="@dimen/sp_18"
+        app:sidebar_text_color="@color/normal"/>
+    <include
+        layout="@layout/tab_bottom"
+        />
+</RelativeLayout>
