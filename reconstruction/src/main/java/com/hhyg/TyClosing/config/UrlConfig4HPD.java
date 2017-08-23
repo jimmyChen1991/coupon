@@ -11,7 +11,7 @@ public class UrlConfig4HPD implements NetrulConfig{
 	@Override
 	public String getServiceUrl() {
 		// TODO Auto-generated method stub
-		return "http://expst.mianshui365.net/api/MSService.php";
+		return "xxxxxxxhttp://expst.mianshui365.net/api/MSService.php";
 	}
 
 }
