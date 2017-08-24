@@ -286,6 +286,8 @@ public class SalerLoginActivity extends BaseActivity{
 					public void onError(@NonNull Throwable e) {
 						if(e instanceof JsonSyntaxException || e instanceof ServiceDataException){
 							Toasty.error(SalerLoginActivity.this,getString(R.string.server_exception)).show();
+						}else{
+							Toasty.error(SalerLoginActivity.this,getString(R.string.netconnect_exception)).show();
 						}
 						Log.d("SalerLoginActivity", e.toString());
 					}

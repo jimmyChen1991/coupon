@@ -5,10 +5,12 @@ import com.hhyg.TyClosing.global.MyApplication;
 
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.widget.Toast;
 public class SimpleHandler extends Handler{
 	@Override
 	public void handleMessage(Message msg) {
+		Log.d("SimpleHandler", "msg.what:" + msg.what);
 		switch(msg.what){
 			case 0:
 				Toast.makeText(MyApplication.GetInstance(), "数据异常", Toast.LENGTH_SHORT).show();
