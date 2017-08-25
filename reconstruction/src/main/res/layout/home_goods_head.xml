@@ -2,13 +2,31 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="50dp">
-    <TextView
-        android:id="@+id/cate_title"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:textSize="21sp"
-        android:textColor="#d71818"/>
+        android:layout_centerInParent="true">
+        <TextView
+            android:layout_width="@dimen/dp_50"
+            android:layout_height="@dimen/dp_2"
+            android:layout_gravity="center_vertical"
+            android:background="#d71818"/>
+        <TextView
+            android:id="@+id/cate_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/dp_5"
+            android:textSize="21sp"
+            android:text="2312323"
+            android:textColor="#d71818"/>
+        <TextView
+            android:layout_width="@dimen/dp_50"
+            android:layout_height="@dimen/dp_2"
+            android:layout_marginLeft="@dimen/dp_5"
+            android:layout_gravity="center_vertical"
+            android:background="#d71818"/>
+    </LinearLayout>
+
     <TextView
         android:id="@+id/seemore"
         android:layout_width="wrap_content"
@@ -21,4 +39,9 @@
         android:textColor="@color/light"
         android:background="@drawable/shape_goodsinfo_brand"
         android:text=" 更多> "/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dp_1"
+        android:background="#e5e5e5"
+        android:layout_alignParentBottom="true"/>
 </RelativeLayout>

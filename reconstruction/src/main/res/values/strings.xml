@@ -14,7 +14,7 @@
     <string name="search_indictor">可搜索品牌、商品~</string>
     <string name="saler_write">此处由体验店销售人员填写</string>
     <string name="saler_num">销售人员编号 : </string>
-
+    <string name="longline">———</string>
     <string name="bindcustomercode">关联客户码</string>
     <string name="menu_settings">Settings</string>
     <string name="soft_update_no">不更新</string>

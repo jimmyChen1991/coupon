@@ -65,7 +65,7 @@ public class GoodsAdapter extends RecyclerView.Adapter{
 
         if(holder instanceof  HeadViewHolder){
             ((HeadViewHolder) holder).cateName.setText(data.getTitle());
-            ((HeadViewHolder) holder).seeMore.setOnClickListener(new View.OnClickListener() {
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Intent it = new Intent();

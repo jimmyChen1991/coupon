@@ -43,6 +43,10 @@ public class BrandAdapter extends BaseSectionQuickAdapter<BrandSection,BaseViewH
 
     @Override
     protected void convertHead(BaseViewHolder helper, BrandSection item) {
-        helper.setText(R.id.head_letter,item.header);
+        String name = item.header;
+        if(item.header.equals("HOT")){
+            name = "热门品牌";
+        }
+        helper.setText(R.id.head_letter,name);
     }
 }

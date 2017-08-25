@@ -154,7 +154,7 @@ public class SalerLoginActivity extends BaseActivity{
 		mSalerNameInputEdit = (AutoClearEditText) findViewById(R.id.salername_input);
 		mSalerPwdInputEdit = (AutoClearEditText) findViewById(R.id.salerpwd_input);
 		mCommitBtn = (Button) findViewById(R.id.commmitbtn);
-		if (true){
+		if (false){
 			//mSalerNameInputEdit.setText("rygcxs");//日月广场店
 			mSalerNameInputEdit.setText("chenqiyang");//线上
 			mSalerPwdInputEdit.setText("1qaz2wsx");

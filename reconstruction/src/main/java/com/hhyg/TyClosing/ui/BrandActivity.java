@@ -201,7 +201,7 @@ public class BrandActivity extends AppCompatActivity {
         if(res.getData().getKeys() != null){
             source = (ArrayList<String>) res.getData().getKeys();
         }
-        source.add(0,"hot");
+        source.add(0,"HOT");
         String[] sArray = new String[source.size()];
         for (int index = 0; index < source.size() ; index ++){
             sArray[index] = source.get(index);
@@ -229,7 +229,7 @@ public class BrandActivity extends AppCompatActivity {
     private void initRv(final Res res){
         ArrayList<BrandSection> dataSet = new ArrayList<>();
         if (res.getData().getHotbrand() != null) {
-            BrandSection head = new BrandSection(true, "hot");
+            BrandSection head = new BrandSection(true, "HOT");
             dataSet.add(head);
             for (BrandInfo info : res.getData().getHotbrand()) {
                 BrandSection item = new BrandSection(info);
