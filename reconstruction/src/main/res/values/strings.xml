@@ -40,6 +40,7 @@
     <string name="title_activity_history_order">HistoryOrderActivity</string>
     <string name="hello_world">Hello world!</string>
     <string name="click_retry">点击重试</string>
+    <string name="user_info">提货人信息</string>
 
     <string name="auto_settle_desc">· 立即支付：在当前设备自助完成后续资格验证、优惠券、礼品卡使用、支付等结算流程。</string>
     <string name="server_settle_desc">· 服务台支付：在服务台由结算员帮助您完成后续资格验证、优惠券、礼品卡使用、支付等结算流程。</string>
@@ -63,7 +64,7 @@
     <string name="flightNum_err">*请输入正确航班号</string>
     <string name="date_err">*请输入日期</string>
     <string name="goback_to_shopcart">返回购物车</string>
-
+    <string name="order_conform">订单确认页</string>
     <string name="pay_type_zhifubao">支付宝支付</string>
     <string name="pay_type_weixin">微信支付</string>
     <string name="pay_type_use_zhifubao">使用支付宝安全支付</string>

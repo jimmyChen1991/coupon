@@ -125,7 +125,7 @@
                             android:layout_marginRight="8dip"
                             android:focusable="true"
                             android:focusableInTouchMode="true"
-                            android:background="#ffffff">
+                            android:background="#000000">
                         <TextView android:id="@+id/textview_time"
                                   android:layout_width="150dip"
                                 android:layout_height="match_parent"

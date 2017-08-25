@@ -391,7 +391,7 @@ public class InfoValidateActivity extends Activity implements View.OnClickListen
                     catch (Exception e){
                         Logger.GetInstance().Exception(e.getMessage());
                     }
-                    
+
                     JSONArray json = new JSONArray();
                     if(shoppingCartMgr.getColumns() == null){
                     	Intent it = new Intent();
@@ -452,7 +452,7 @@ public class InfoValidateActivity extends Activity implements View.OnClickListen
                     Intent intent = new Intent();
                     intent.putExtra("data",jALl.toString());
                     Logger.GetInstance().Debug(jsonObj.get("data").toString());
-                    intent.setClass(InfoValidateActivity.this, OrderConformActivity.class);
+                    intent.setClass(InfoValidateActivity.this, OrderActivity.class);
                     startActivity(intent);
 
                 } else if (errcode == 2) {
