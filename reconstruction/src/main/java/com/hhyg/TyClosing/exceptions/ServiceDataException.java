@@ -5,6 +5,7 @@ package com.hhyg.TyClosing.exceptions;
  */
 
 public class ServiceDataException extends Exception{
+
     public ServiceDataException() {
         super("数据异常");
     }

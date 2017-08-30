@@ -2,13 +2,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:orientation="vertical"
                 android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:background="#ffffff"
-                android:layout_marginTop="12dip"
-                android:layout_marginLeft="20dip"
-                android:layout_marginRight="20dip"
-                android:paddingBottom="20dip"
-                android:layout_height="match_parent">
-
+                android:layout_margin="@dimen/dp_2"
+                android:paddingBottom="20dip">
     <RelativeLayout
             android:id="@+id/toolbarmeber1"
             android:layout_below="@+id/toolbar19"
@@ -107,6 +104,8 @@
                     android:layout_below="@+id/memeberaccount"
                     android:layout_weight="1"
                     android:hint=" 请输入验证码"
+                    android:inputType="text"
+                    android:maxLines="1"
                     android:textAppearance="?android:attr/textAppearanceMedium"/>
             <Button
                     android:id="@+id/button_get_code"

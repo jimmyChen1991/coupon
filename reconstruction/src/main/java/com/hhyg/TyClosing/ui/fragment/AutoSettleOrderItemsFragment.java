@@ -45,8 +45,16 @@ public class AutoSettleOrderItemsFragment extends Fragment {
     public void initData(){
         String data = ((OrderConformActivity) getActivity()).getObGoods().toString();
         List<GoodSku> dataList = JSONObject.parseArray(data, GoodSku.class);
+        getView(dataList);
+    }
+
+    private void getView(List<GoodSku> dataList) {
         itemListView = (ListView) mView.findViewById(R.id.order_item_list);
         AutoSettleOrderAdapter autoSettleOrderAdapter = new AutoSettleOrderAdapter(dataList, getActivity(), R.layout.auto_settle_order_item_detail);
         itemListView.setAdapter(autoSettleOrderAdapter);
+    }
+
+    public void setData(List<GoodSku> dataList){
+        getView(dataList);
     }
 }

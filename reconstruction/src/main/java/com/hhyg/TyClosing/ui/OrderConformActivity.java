@@ -1,11 +1,13 @@
 package com.hhyg.TyClosing.ui;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
@@ -43,6 +45,9 @@ import com.hhyg.TyClosing.mgr.ShoppingCartMgr;
 import com.hhyg.TyClosing.mgr.UserTrackMgr;
 import com.hhyg.TyClosing.ui.dialog.CustomAlertDialog;
 import com.hhyg.TyClosing.ui.dialog.CustomConfirmDialog;
+import com.hhyg.TyClosing.ui.dialog.OrderConfirmDialog;
+import com.hhyg.TyClosing.ui.fragment.AutoSettleOrderItemsFragment;
+import com.hhyg.TyClosing.ui.fragment.order.CouponFragment;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
 import com.hhyg.TyClosing.util.StringUtil;
 import com.squareup.picasso.Picasso;
@@ -57,12 +62,24 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.hhyg.TyClosing.config.Constants.IS_DEBUG_MODE;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 /**
  * Created by mjf on 16/8/18.
  */
-public class OrderConformActivity extends Activity {
+public class OrderConformActivity extends AppCompatActivity {
+    @BindView(R.id.coupon_warnning)
+    TextView couponWarnning;
+    @BindView(R.id.bouns_warnning)
+    TextView bounsWarnning;
+    @BindView(R.id.giftcard_warnning)
+    TextView giftcardWarnning;
+    @BindView(R.id.giftcard_entry)
+    View giftEntry;
+    @BindView(R.id.giftcard_split)
+    View getGiftSplit;
     private List lTicket = new ArrayList();
     private List lCard = new ArrayList();
     private List lHongbao = new ArrayList();
@@ -91,37 +108,32 @@ public class OrderConformActivity extends Activity {
     private cancelCardCallback mCancelCardCallback = new cancelCardCallback();
     private getCodeCallback mgetCodeCallback = new getCodeCallback();
     private getSendCodeCallback msendCodeCallback = new getSendCodeCallback();
-    private checkCodeCallback mCheckodeCallback = new checkCodeCallback();
-    private getHongbaoCallback mGetHongbaoCallback  = new getHongbaoCallback();
+    private getHongbaoCallback mGetHongbaoCallback = new getHongbaoCallback();
 
 
     private buyCallback mbuyCallBack = new buyCallback();
     private Dialog mDialog = null;
 
-    private View cardWrap;
     private EditText mTicketEdit;
     private EditText mCardNumberEdit;
     private EditText mCarPasswordEdit;
-    public android.os.Handler mHandler = new android.os.Handler();
+    public Handler mHandler = new Handler();
     private ClosingRefInfoMgr mClosingRefInfoMgr = ClosingRefInfoMgr.getInstance();
     private String mGetGoodsTime;
     public Timer timer = null;
 
-    private final  int TIMNERCOUNT = 60;
-    private int nTimerLeft= 0;
+    private int nTimerLeft = 0;
     private String mStrPhone = "";
-    private String mSign = null;
     private String mToken = null;
-    private boolean mbCanGetCode = true;
-
+    private CouponFragment couponFragment = new CouponFragment();
 
     public void findView() {
-        cardWrap = findViewById(R.id.toolbar8);
         Log.d("OrderConformActivity", "cart active" + mClosingRefInfoMgr.getLoginConfig().isCard_active());
-        if(mClosingRefInfoMgr.getLoginConfig().isCard_active()){
-            cardWrap.setVisibility(View.VISIBLE);
-        }else {
-            cardWrap.setVisibility(View.GONE);
+        if (mClosingRefInfoMgr.getLoginConfig().isCard_active()) {
+            giftEntry.setVisibility(View.VISIBLE);
+        } else {
+            getGiftSplit.setVisibility(View.GONE);
+            giftEntry.setVisibility(View.GONE);
         }
         mTicketEdit = (EditText) findViewById(R.id.username_code_number);
         mCardNumberEdit = (EditText) findViewById(R.id.username_card_number);
@@ -132,62 +144,58 @@ public class OrderConformActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.orderconform);
+        ButterKnife.bind(this);
         findView();
         adapter = new ticketAdapter(this);
         String strJson = getIntent().getStringExtra("data");
-        com.alibaba.fastjson.JSONObject jsonObject = null;
+        JSONObject jsonObject = null;
         try {
-            jsonObject = com.alibaba.fastjson.JSONObject.parseObject(strJson);
+            jsonObject = JSONObject.parseObject(strJson);
         } catch (Exception e) {
             Logger.GetInstance().Exception(e.getMessage() + " json data is :" + strJson);
         }
         ob = jsonObject;
         obInfo = jsonObject.getJSONObject("userInfo");
         obGoods = jsonObject.getJSONArray("goodsSku");
-        if("1".equals(jsonObject.getString("available"))){
+        if ("1".equals(jsonObject.getString("available"))) {
             mStrPhone = jsonObject.getString("phone");
             mToken = jsonObject.getString("token");
-            TextView t = (TextView)findViewById(R.id.memeberaccount);
+            TextView t = (TextView) findViewById(R.id.memeberaccount);
             t.setText("账户 ：" + mStrPhone);
-            RelativeLayout lay = (RelativeLayout)findViewById(R.id.main1);
+            RelativeLayout lay = (RelativeLayout) findViewById(R.id.main1);
             lay.setVisibility(View.VISIBLE);
-        }
-        else{
-            TextView t = (TextView)findViewById(R.id.textview_no_hongbao);
+        } else {
+            TextView t = (TextView) findViewById(R.id.textview_no_hongbao);
             t.setVisibility(View.VISIBLE);
         }
 
         //有特权码商品
-        if("0".equals(jsonObject.getString("SpecialCount")) == false){
+        if ("0".equals(jsonObject.getString("SpecialCount")) == false) {
             View t = findViewById(R.id.textview_title71);
             t.setVisibility(View.VISIBLE);
 
             EditText et = (EditText) findViewById(R.id.username_code_number);
             et.setEnabled(false);
 
-            Button btn = (Button)findViewById(R.id.button_use_code);
+            Button btn = (Button) findViewById(R.id.button_use_code);
             btn.setEnabled(false);
 
-            TextView text = (TextView)findViewById(R.id.textview_no_hongbao);
+            TextView text = (TextView) findViewById(R.id.textview_no_hongbao);
             text.setText("*订单商品使用了特权码活动，不可再使用红包了哦~");
-            text.setTextColor(android.graphics.Color.parseColor("#ff0000"));
+            text.setTextColor(Color.parseColor("#ff0000"));
             text.setTextSize(13);
             t.setVisibility(View.VISIBLE);
         }
 
         mInfoPickUp = MyApplication.GetInstance().getUserSelectAir();//(PickUpInfo)CacheUtilManager.getInstance().getDefaultCache().get(KEY_AIR_ATG);
-        com.hhyg.TyClosing.ui.fragment.AutoSettleOrderItemsFragment fragment =
-                (com.hhyg.TyClosing.ui.fragment.AutoSettleOrderItemsFragment)(getFragmentManager().findFragmentById(R.id.orderDetailFragment));
+        AutoSettleOrderItemsFragment fragment =
+                (AutoSettleOrderItemsFragment) (getFragmentManager().findFragmentById(R.id.orderDetailFragment));
         fragment.initData();
-        if(IS_DEBUG_MODE == true) {
-//            EditText t = (EditText) findViewById(R.id.username_code_number);
-//            t.setText("3b39a4cd");
-//            t = (EditText) findViewById(R.id.username_card_number);
-//            t.setText("100000350000145");
-//            t = (EditText) findViewById(R.id.username_card_password);
-//            t.setText("8cce8c7d");
-        }
-
+        EditText t;
+            t = (EditText) findViewById(R.id.username_card_number);
+            t.setText("2908980100000610570");
+            t = (EditText) findViewById(R.id.username_card_password);
+            t.setText("8cce8c7d");
         //验证优惠券
         Button btn = (Button) findViewById(R.id.button_use_code);
         btn.setOnClickListener(new View.OnClickListener() {
@@ -199,7 +207,7 @@ public class OrderConformActivity extends Activity {
                 if (checkTicket() == false)
                     return;
 
-                com.alibaba.fastjson.JSONObject Json = new com.alibaba.fastjson.JSONObject();
+                JSONObject Json = new JSONObject();
                 Json.put("op", "getcoupon");
                 Json.put("number", mTicketEdit.getText().toString());
                 Json.put("order_amount", ob.getString("finalPrice"));
@@ -233,7 +241,7 @@ public class OrderConformActivity extends Activity {
                 map1.put("giftPwd", mCarPasswordEdit.getText().toString());
                 map1.put("orderPrice", getOrderPrice());
                 map1.put("giftKey", getCardCaheckNetArg());
-                com.alibaba.fastjson.JSONObject map = new com.alibaba.fastjson.JSONObject();
+                JSONObject map = new JSONObject();
                 map.put("op", "getgiftcard");
                 map.put("data", map1);
                 showDlg();
@@ -250,7 +258,8 @@ public class OrderConformActivity extends Activity {
         //获取验证码
         btn = (Button) findViewById(R.id.button_get_code);
         btn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
+            @Override
+            public void onClick(View v) {
                 Button btn = (Button) findViewById(R.id.button_get_code);
                 btn.setClickable(false);
                 getCode(mStrPhone);
@@ -260,29 +269,30 @@ public class OrderConformActivity extends Activity {
         //验证验证码
         btn = (Button) findViewById(R.id.button_code_check);
         btn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
+            @Override
+            public void onClick(View v) {
                 EditText t = (EditText) findViewById(R.id.member_input_code);
                 String str = t.getText().toString();
-                if(StringUtil.isEmpty(str)){
+                if (StringUtil.isEmpty(str)) {
                     showToast("请输入验证码");
                     return;
                 }
                 JSONObject mapData = new JSONObject();
-                mapData.put( "mobile_phone", mStrPhone);
-                mapData.put( "token", mToken);
-                mapData.put( "code",str);
-                mapData.put( "finalPrice",getJsonObjet(ob, "finalPrice", "0.00"));
+                mapData.put("mobile_phone", mStrPhone);
+                mapData.put("token", mToken);
+                mapData.put("code", str);
+                mapData.put("finalPrice", getJsonObjet(ob, "finalPrice", "0.00"));
 
                 JSONObject map = new JSONObject();
-                map.put( "op", "getdiscountinfo");
-                map.put( "data", mapData);
+                map.put("op", "getdiscountinfo");
+                map.put("data", mapData);
 
                 showDlg();
                 try {
                     String url = Constants.getIndexUrl() + "?r=userdiscount/getdiscountinfo";
                     MyApplication.GetInstance().post(url, JsonPostParamBuilder.makeParam(map), mGetHongbaoCallback);
                 } catch (Exception e) {
-                    Logger.GetInstance().Exception(e.getMessage() + " send data is :" + map.toString()) ;
+                    Logger.GetInstance().Exception(e.getMessage() + " send data is :" + map.toString());
                 }
             }
         });
@@ -290,17 +300,27 @@ public class OrderConformActivity extends Activity {
         //去支付
         btn = (Button) findViewById(R.id.button_goto_pay);
         btn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                com.hhyg.TyClosing.ui.dialog.OrderConfirmDialog customConfirmDialog = new com.hhyg.TyClosing.ui.dialog.OrderConfirmDialog();
+            @Override
+            public void onClick(View v) {
+                OrderConfirmDialog customConfirmDialog = new OrderConfirmDialog();
                 obInfo.put("port", mInfoPickUp.name);
                 customConfirmDialog.setMsgInfo(obInfo.toString());
                 customConfirmDialog.setConfirmBtnText(getString(R.string.goback_to_shopcart));
                 customConfirmDialog.setTime(mGetGoodsTime);
                 customConfirmDialog.setCancelBtnText(getString(R.string.queding));
                 customConfirmDialog.setAction(new CustomConfirmDialog.Action() {
-                    @Override public void process() {toBuy();}
-                    @Override public void cancel() {}
-                    @Override public void close() {}
+                    @Override
+                    public void process() {
+                        toBuy();
+                    }
+
+                    @Override
+                    public void cancel() {
+                    }
+
+                    @Override
+                    public void close() {
+                    }
                 });
                 customConfirmDialog.show(getFragmentManager(), "customConfirmDialog");
             }
@@ -309,9 +329,8 @@ public class OrderConformActivity extends Activity {
 
         ImageButton scanBt = (ImageButton) findViewById(R.id.button_scan1);
         scanBt.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                String clazz = this.getClass().getName();
-                Logger.GetInstance().Debug("enter  " + clazz + "  " + "button_scan1 onClick");
+            @Override
+            public void onClick(View v) {
                 finish();
             }
         });
@@ -324,26 +343,9 @@ public class OrderConformActivity extends Activity {
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
                 JSONObject jsonobject = (JSONObject) lTicket.get(arg2);
                 int nResult = touchedTicketData(jsonobject);
-                if(3 == nResult || 0 == nResult ){
+                if (3 == nResult || 0 == nResult) {
                     showToast("不满足使用条件");
                 }
-//                if (INUSE.equals(JosnGetString(jsonobject, KEYTAG))) {
-//                    jsonobject.put( KEYTAG, CANUSE);
-//                    updateAll();
-//                } else {
-//                    double d = Double.parseDouble(getJsonObjet(ob, "finalPrice", "0.00")) - getCardMoney() - getHongbaoMoney();
-//                    float fRule = getRuleMoney(jsonobject);
-//                    if (d - fRule > 0) {
-//                        for (int i = 0; i < lTicket.size(); i++) {
-//                            JSONObject j = (JSONObject) lTicket.get(i);
-//                            j.put( KEYTAG, CANUSE);
-//                        }
-//                        jsonobject.put(KEYTAG, INUSE);
-//                        updateAll();
-//                    } else {
-//                        showToast("不满足使用条件");
-//                    }
-//                }
             }
         });
         //所有可用的礼品卡
@@ -378,7 +380,7 @@ public class OrderConformActivity extends Activity {
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
                 JSONObject jsonobject = (JSONObject) lHongbao.get(arg2);
                 if (INUSE.equals(JosnGetString(jsonobject, KEYTAG))) {
-                    jsonobject.put( KEYTAG, CANUSE);
+                    jsonobject.put(KEYTAG, CANUSE);
                     updateAll();
                 } else {
                     double d = Double.parseDouble(getJsonObjet(ob, "finalPrice", "0.00")) - getCardMoney() - getTicketMoney();
@@ -386,7 +388,7 @@ public class OrderConformActivity extends Activity {
                     if (d - fRule > 0) {
                         for (int i = 0; i < lHongbao.size(); i++) {
                             JSONObject j = (JSONObject) lHongbao.get(i);
-                            j.put( KEYTAG, CANUSE);
+                            j.put(KEYTAG, CANUSE);
                         }
                         jsonobject.put(KEYTAG, INUSE);
                         updateAll();
@@ -414,7 +416,7 @@ public class OrderConformActivity extends Activity {
     public void stoptimer() {
         mHandler.post(new Runnable() {
             public void run() {
-                if (timer != null){
+                if (timer != null) {
                     timer.cancel();
                     timer.purge();
                     timer = null;
@@ -428,28 +430,27 @@ public class OrderConformActivity extends Activity {
     }
 
     public void starttimer() {
-        if(timer!= null)
+        if (timer != null)
             return;
         nTimerLeft = 60;
         timer = new Timer();
-        timer.schedule(new TimerTask(){
+        timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                if(nTimerLeft == 0){
+                if (nTimerLeft == 0) {
                     stoptimer();
-                }
-                else {
+                } else {
                     mHandler.post(new Runnable() {
                         public void run() {
                             Button btn = (Button) findViewById(R.id.button_get_code);
-                            btn.setText("剩余"+nTimerLeft+"秒");
+                            btn.setText("剩余" + nTimerLeft + "秒");
                             btn.setEnabled(false);
                             nTimerLeft--;
                         }
                     });
                 }
             }
-        }, 0,  1000);
+        }, 0, 1000);
     }
 
     private boolean checkCard() {
@@ -481,7 +482,7 @@ public class OrderConformActivity extends Activity {
     }
 
     //验证码成功之后显示的UI
-    private  void showSuccessUI(){
+    private void showSuccessUI() {
         View t = findViewById(R.id.button_success_icon);
         t.setVisibility(View.VISIBLE);
 
@@ -496,13 +497,12 @@ public class OrderConformActivity extends Activity {
     }
 
 
-
     private void resetTicketData() {
         double fall = Double.parseDouble(getJsonObjet(ob, "finalPrice", "0.00"));
         for (int i = 0; i < lTicket.size(); i++) {
             JSONObject jsonobject = (JSONObject) lTicket.get(i);
-            if(fall <= getRuleMoney(jsonobject))//不满足使用条件
-                jsonobject.put(KEYTAG,CANTUSE);
+            if (fall <= getRuleMoney(jsonobject))//不满足使用条件
+                jsonobject.put(KEYTAG, CANTUSE);
         }
     }
 
@@ -513,61 +513,59 @@ public class OrderConformActivity extends Activity {
             2，选中正在使用
             3，满足使用门槛，但优惠额度太大，产品要求用户至少要掏一分钱
     */
-    private int  touchedTicketData(JSONObject jsonTouched) {
-        if(CANTUSE.equals(jsonTouched.getString(KEYTAG)))//不满足使用条件
+    private int touchedTicketData(JSONObject jsonTouched) {
+        if (CANTUSE.equals(jsonTouched.getString(KEYTAG)))//不满足使用条件
             return 0;
         if (INUSE.equals(JosnGetString(jsonTouched, KEYTAG))) {
             jsonTouched.put(KEYTAG, CANUSE);
             updateAll();
             return 1;
-        }
-        else{
+        } else {
             double fall = Double.parseDouble(getJsonObjet(ob, "finalPrice", "0.00")) - getCardMoney() - getHongbaoMoney();
             float fRule = 0;
             String str = getJsonObjet(jsonTouched, "rule", "");
             String[] chrstr = str.split(":");
-            if(chrstr.length == 2)
+            if (chrstr.length == 2)
                 fRule = Float.parseFloat(chrstr[1]);//优惠的金额
             if (fall - fRule > 0) { //用户至少要掏一分钱
                 for (int i = 0; i < lTicket.size(); i++) {
                     JSONObject j = (JSONObject) lTicket.get(i);
-                    if(CANTUSE.equals(j.getString(KEYTAG)) == false)
+                    if (!CANTUSE.equals(j.getString(KEYTAG)))
                         j.put(KEYTAG, CANUSE);
                 }
                 jsonTouched.put(KEYTAG, INUSE);
                 updateAll();
                 return 2;
-            }
-            else{
+            } else {
                 return 3;
             }
         }
     }
 
 
-    private void setDefaultValue(){
+    private void setDefaultValue() {
         JSONObject jsonobjectMax = null;
         float fMax = 0;
 
         double fall = Double.parseDouble(getJsonObjet(ob, "finalPrice", "0.00")) - getCardMoney();
         for (int i = 0; i < lTicket.size(); i++) {
             JSONObject jsonobject = (JSONObject) lTicket.get(i);
-            if(CANUSE.equals(jsonobject.getString(KEYTAG)) == false)
+            if (CANUSE.equals(jsonobject.getString(KEYTAG)) == false)
                 continue;
             float fRule = 0;
             String str = getJsonObjet(jsonobject, "rule", "");
             String[] chrstr = str.split(":");
-            if(chrstr.length == 2)
+            if (chrstr.length == 2)
                 fRule = Float.parseFloat(chrstr[1]);//优惠的金额
-            if(fall - fRule > 0){
-                if(fMax < fRule){
+            if (fall - fRule > 0) {
+                if (fMax < fRule) {
                     fMax = fRule;
                     jsonobjectMax = jsonobject;
                 }
             }
         }
 
-        if(jsonobjectMax != null){
+        if (jsonobjectMax != null) {
             touchedTicketData(jsonobjectMax);
         }
 
@@ -580,7 +578,7 @@ public class OrderConformActivity extends Activity {
                 continue;
             float fRule = getHongbaoRuleMoney(jsonobject);
             if (fall - fRule > 0) {
-                if(fMax < fRule){
+                if (fMax < fRule) {
                     fMax = fRule;
                     jsonobjectMax = jsonobject;
                 }
@@ -588,10 +586,10 @@ public class OrderConformActivity extends Activity {
         }
 
 
-        if(jsonobjectMax != null){
+        if (jsonobjectMax != null) {
             for (int i = 0; i < lHongbao.size(); i++) {
                 JSONObject j = (JSONObject) lHongbao.get(i);
-                j.put( KEYTAG, CANUSE);
+                j.put(KEYTAG, CANUSE);
             }
             jsonobjectMax.put(KEYTAG, INUSE);
         }
@@ -619,11 +617,25 @@ public class OrderConformActivity extends Activity {
         return bReturn;
     }
 
+    @OnClick({R.id.coupon_entry, R.id.bouns_entry, R.id.giftcard_entry})
+    public void onViewClicked(View view) {
+        switch (view.getId()) {
+            case R.id.coupon_entry:
+                couponFragment.show(getSupportFragmentManager());
+                break;
+            case R.id.bouns_entry:
+                break;
+            case R.id.giftcard_entry:
+                break;
+        }
+    }
+
     private class checkTicketCallback implements INetWorkCallBack {
-        @Override public void PostProcess(int msgId, String msg) {
-            com.alibaba.fastjson.JSONObject jsonObject = null;
+        @Override
+        public void PostProcess(int msgId, String msg) {
+            JSONObject jsonObject = null;
             try {
-                jsonObject = com.alibaba.fastjson.JSONObject.parseObject(msg);
+                jsonObject = JSONObject.parseObject(msg);
             } catch (Exception e) {
                 Logger.GetInstance().Error("Json parse error :" + msg);
             }
@@ -641,7 +653,7 @@ public class OrderConformActivity extends Activity {
             String type = data.getString("type");
             if (type.equals("1")) {
                 data.put("id", mTicketEdit.getText().toString());
-                data.put(KEYTAG,CANUSE);
+                data.put(KEYTAG, CANUSE);
                 lTicket.add(data);
                 mHandler.post(new Runnable() {
                     public void run() {
@@ -658,9 +670,9 @@ public class OrderConformActivity extends Activity {
                         if (fleftMoney > fRule) {
                             for (int i = 0; i < lTicket.size(); i++) {
                                 JSONObject jsonobject = (JSONObject) lTicket.get(i);
-                                if(CANTUSE.equals(jsonobject.getString(KEYTAG)))
+                                if (CANTUSE.equals(jsonobject.getString(KEYTAG)))
                                     continue;
-                                jsonobject.put(KEYTAG,CANUSE);
+                                jsonobject.put(KEYTAG, CANUSE);
                             }
                             data.put(KEYTAG, INUSE);
                         }
@@ -680,71 +692,26 @@ public class OrderConformActivity extends Activity {
         }
     }
 
-    private float getRuleMoney(JSONObject j){
+    private float getRuleMoney(JSONObject j) {
         String str = getJsonObjet(j, "rule", "");
         String[] chrstr = str.split(":");
-        if(chrstr.length == 2) {
+        if (chrstr.length == 2) {
             return Float.parseFloat(chrstr[0]);
         }
         return 0;
     }
 
-    private float getHongbaoRuleMoney(JSONObject j){
+    private float getHongbaoRuleMoney(JSONObject j) {
         String str = getJsonObjet(j, "money", "");
         return Float.parseFloat(str);
     }
 
-    private class checkCodeCallback implements INetWorkCallBack {
-        @Override public void PostProcess(int msgId, String msg) {
-            com.alibaba.fastjson.JSONObject jsonObject = null;
-            try {
-                jsonObject = com.alibaba.fastjson.JSONObject.parseObject(msg);
-            } catch (Exception e) {
-                Logger.GetInstance().Error("Json parse error :" + msg);
-            }
-
-            NetExceptionAlert netExceptionAlert = new NetExceptionAlert(OrderConformActivity.this, null);
-            if (netExceptionAlert.netExceptionProcess(msgId, msg)) {
-                return;
-            }
-            String type = jsonObject.getString("errcode");
-            if (type.equals("1")) {
-                final JSONObject data = jsonObject.getJSONObject("data");
-                EditText t = (EditText) findViewById(R.id.username_card_number);
-                final String Input = t.getText().toString();
-                data.put("id", Input);
-                data.put(KEYTAG, CANUSE);
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        lCard.add(data);
-                        setHeightByID(R.id.toolbar8, 480 + lCard.size() * 100);
-                        updateAll();
-                        double d = Double.parseDouble(getJsonObjet(ob, "finalPrice", "0.00"));
-                        float fleftMoney = (float) d - getTicketMoney() - getCardMoney();
-                        if (fleftMoney > Float.parseFloat(getJsonObjet(data, "money", "0")))
-                            cancelCard(Input, CANUSE);
-                    }
-                });
-            } else {
-                final String str = getJsonObjet(jsonObject, "msg", "");
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        Toast toast = Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
-                        hideDlg();
-                    }
-                });
-            }
-        }
-    }
-
-
     private class checkCardCallback implements INetWorkCallBack {
-        @Override public void PostProcess(int msgId, String msg) {
-            com.alibaba.fastjson.JSONObject jsonObject = null;
+        @Override
+        public void PostProcess(int msgId, String msg) {
+            JSONObject jsonObject = null;
             try {
-                jsonObject = com.alibaba.fastjson.JSONObject.parseObject(msg);
+                jsonObject = JSONObject.parseObject(msg);
             } catch (Exception e) {
                 Logger.GetInstance().Error("Json parse error :" + msg);
             }
@@ -803,7 +770,7 @@ public class OrderConformActivity extends Activity {
         try {
             date = sdf.parse(dstr);
         } catch (ParseException e) {
-            Logger.GetInstance().Exception(e.getMessage() + " str is :" + sdf + " and format is " + strFormat );
+            Logger.GetInstance().Exception(e.getMessage() + " str is :" + sdf + " and format is " + strFormat);
             e.printStackTrace();
         }
         return date;
@@ -813,7 +780,7 @@ public class OrderConformActivity extends Activity {
         for (int i = 0; i < lTicket.size(); i++) {
             JSONObject jsonobject = (JSONObject) lTicket.get(i);
             String str = getJsonObjet(jsonobject, KEYTAG, "");
-            if   (INUSE.equals(str))
+            if (INUSE.equals(str))
                 return getJsonObjet(jsonobject, "id", "");
         }
         return "";
@@ -858,7 +825,6 @@ public class OrderConformActivity extends Activity {
     }
 
 
-
     public void updateAll() {
         mHandler.post(new Runnable() {
             public void run() {
@@ -883,8 +849,6 @@ public class OrderConformActivity extends Activity {
         return strReturn;
     }
 
-
-
     public String getCardNetArg() {
         String strReturn = "";
         for (int i = 0; i < lCard.size(); i++) {
@@ -902,7 +866,7 @@ public class OrderConformActivity extends Activity {
         for (int i = 0; i < lCard.size(); i++) {
             JSONObject jsonobject = (JSONObject) lCard.get(i);
             String str = getJsonObjet(jsonobject, "temp_order_key", "");
-            if (StringUtil.isEmpty(str) == false)
+            if (!StringUtil.isEmpty(str))
                 return str;
         }
         return "";
@@ -915,7 +879,6 @@ public class OrderConformActivity extends Activity {
         float f = (float) d - fAll;
         if (f < 0) {
             f = 0;
-            Logger.GetInstance().Error("getOrderPrice Error : f is " + f);
         }
         String strReturn = String.format("%.2f", ((f * 100) / 100.0f));
         return strReturn;
@@ -923,15 +886,16 @@ public class OrderConformActivity extends Activity {
 
 
     private class cancelCardCallback implements INetWorkCallBack {
-        @Override public void PostProcess(int msgId, String msg) {
+        @Override
+        public void PostProcess(int msgId, String msg) {
             mHandler.post(new Runnable() {
                 public void run() {
                     hideDlg();
                 }
             });
-            com.alibaba.fastjson.JSONObject jsonObject = null;
+            JSONObject jsonObject = null;
             try {
-                jsonObject = com.alibaba.fastjson.JSONObject.parseObject(msg);
+                jsonObject = JSONObject.parseObject(msg);
             } catch (Exception e) {
                 Logger.GetInstance().Exception(e.getMessage() + " parse string is :" + msg);
             }
@@ -940,7 +904,7 @@ public class OrderConformActivity extends Activity {
                 return;
             }
             String str = jsonObject.getString("errcode");
-            if (StringUtil.isEmpty(str) == false) {
+            if (!StringUtil.isEmpty(str)) {
                 if (str.equals("1")) {
                     JSONObject j1 = jsonObject.getJSONObject("data");
                     final String checkFlag = getJsonObjet(j1, "checkFlag", "");
@@ -970,11 +934,11 @@ public class OrderConformActivity extends Activity {
         if (StringUtil.isEmpty(strCardNumber))
             return;
         JSONObject map = new JSONObject();
-        map.put( "op", "giftcardcheckin");
+        map.put("op", "giftcardcheckin");
         JSONObject map1 = new JSONObject();
-        map1.put( "giftCode", strCardNumber);
-        map1.put( "checkFlag", INUSE.equals(isInUse) ? "0" : "1");
-        map1.put( "giftKey", getCardCaheckNetArg());
+        map1.put("giftCode", strCardNumber);
+        map1.put("checkFlag", INUSE.equals(isInUse) ? "0" : "1");
+        map1.put("giftKey", getCardCaheckNetArg());
         map.put("data", map1);
 
         showDlg();
@@ -991,13 +955,13 @@ public class OrderConformActivity extends Activity {
             return;
 
         JSONObject mapData = new JSONObject();
-        mapData.put( "mobilephone", strPhone);
+        mapData.put("mobilephone", strPhone);
         JSONObject map = new JSONObject();
-        map.put( "op", "secury");
-        map.put( "data", mapData);
+        map.put("op", "secury");
+        map.put("data", mapData);
         showDlg();
         try {
-            String url =Constants.getIndexUrl();
+            String url = Constants.getIndexUrl();
             url += "?r=login/secury";
             MyApplication.GetInstance().post(url,
                     JsonPostParamBuilder.makeParam(map), mgetCodeCallback);
@@ -1005,16 +969,18 @@ public class OrderConformActivity extends Activity {
             Logger.GetInstance().Exception(e.getMessage() + " send data is :" + map.toJSONString());
         }
     }
+
     private class getCodeCallback implements INetWorkCallBack {
-        @Override public void PostProcess(int msgId, String msg) {
+        @Override
+        public void PostProcess(int msgId, String msg) {
             mHandler.post(new Runnable() {
                 public void run() {
                     hideDlg();
                 }
             });
-            com.alibaba.fastjson.JSONObject jsonObject = null;
+            JSONObject jsonObject = null;
             try {
-                jsonObject = com.alibaba.fastjson.JSONObject.parseObject(msg);
+                jsonObject = JSONObject.parseObject(msg);
             } catch (Exception e) {
                 Logger.GetInstance().Exception(e.getMessage() + " msg is :" + msg);
             }
@@ -1025,32 +991,31 @@ public class OrderConformActivity extends Activity {
             }
             String str = jsonObject.getString("errcode");
             if (StringUtil.isEmpty(str) == false && str.equals("1")) {
-                com.alibaba.fastjson.JSONObject ob1  = jsonObject.getJSONObject("data");
-                if(ob1 != null) {
-                    mSign = ob1.getString("sign");
+                JSONObject ob1 = jsonObject.getJSONObject("data");
+                if (ob1 != null) {
                     sendCodeToPhone(ob1.getString("timestamp"), ob1.getString("sign"));
                 }
-            }
-            else{
+            } else {
                 String strError = jsonObject.getString("msg");
-                if(StringUtil.isEmpty(strError))
+                if (StringUtil.isEmpty(strError))
                     strError = "服务器数据错误";
                 showToast(strError);
                 setBtnEnable();
             }
         }
     }
-    public void sendCodeToPhone(String timestamp,String sign ) {
+
+    public void sendCodeToPhone(String timestamp, String sign) {
         if (StringUtil.isEmpty(mStrPhone))
             return;
 
         JSONObject mapData = new JSONObject();
-        mapData.put( "mobilephone", mStrPhone);
-        mapData.put( "timestamp", timestamp);
-        mapData.put( "sign", sign);
+        mapData.put("mobilephone", mStrPhone);
+        mapData.put("timestamp", timestamp);
+        mapData.put("sign", sign);
         JSONObject map = new JSONObject();
-        map.put( "op", "send");
-        map.put( "data", mapData);
+        map.put("op", "send");
+        map.put("data", mapData);
 
         mHandler.post(new Runnable() {
             public void run() {
@@ -1059,7 +1024,7 @@ public class OrderConformActivity extends Activity {
         });
 
         try {
-            String url =  Constants.getIndexUrl();
+            String url = Constants.getIndexUrl();
             url += "?r=login/send";
             MyApplication.GetInstance().post(url,
                     JsonPostParamBuilder.makeParam(map), msendCodeCallback);
@@ -1069,17 +1034,18 @@ public class OrderConformActivity extends Activity {
     }
 
     private class getSendCodeCallback implements INetWorkCallBack {
-        @Override public void PostProcess(int msgId, String msg) {
+        @Override
+        public void PostProcess(int msgId, String msg) {
             mHandler.post(new Runnable() {
                 public void run() {
                     hideDlg();
                 }
             });
-            com.alibaba.fastjson.JSONObject jsonObject = null;
+            JSONObject jsonObject = null;
             try {
-                jsonObject = com.alibaba.fastjson.JSONObject.parseObject(msg);
+                jsonObject = JSONObject.parseObject(msg);
             } catch (Exception e) {
-                Logger.GetInstance().Exception(e.getMessage()+ " parse data is :" + msg);
+                Logger.GetInstance().Exception(e.getMessage() + " parse data is :" + msg);
             }
             NetExceptionAlert netExceptionAlert = new NetExceptionAlert(OrderConformActivity.this, null);
             if (netExceptionAlert.netExceptionProcess(msgId, msg)) {
@@ -1093,10 +1059,9 @@ public class OrderConformActivity extends Activity {
                         starttimer();
                     }
                 });
-            }
-            else{
+            } else {
                 String strError = jsonObject.getString("msg");
-                if(StringUtil.isEmpty(strError))
+                if (StringUtil.isEmpty(strError))
                     strError = "服务器数据错误";
                 showToast(strError);
                 setBtnEnable();
@@ -1104,9 +1069,7 @@ public class OrderConformActivity extends Activity {
         }
     }
 
-    private void setBtnEnable(){
-        if( mbCanGetCode == false)
-            return;;
+    private void setBtnEnable() {
         mHandler.post(new Runnable() {
             public void run() {
                 Button btn = (Button) findViewById(R.id.button_get_code);
@@ -1118,19 +1081,19 @@ public class OrderConformActivity extends Activity {
     }
 
 
-
     private class getHongbaoCallback implements INetWorkCallBack {
-        @Override public void PostProcess(int msgId, String msg) {
+        @Override
+        public void PostProcess(int msgId, String msg) {
             mHandler.post(new Runnable() {
                 public void run() {
                     hideDlg();
                 }
             });
-            com.alibaba.fastjson.JSONObject jsonObject = null;
+            JSONObject jsonObject = null;
             try {
-                jsonObject = com.alibaba.fastjson.JSONObject.parseObject(msg);
+                jsonObject = JSONObject.parseObject(msg);
             } catch (Exception e) {
-                Logger.GetInstance().Exception(e.getMessage()+ " parse data is :" + msg);
+                Logger.GetInstance().Exception(e.getMessage() + " parse data is :" + msg);
             }
             NetExceptionAlert netExceptionAlert = new NetExceptionAlert(OrderConformActivity.this, null);
             if (netExceptionAlert.netExceptionProcess(msgId, msg)) {
@@ -1138,12 +1101,12 @@ public class OrderConformActivity extends Activity {
             }
             String str = jsonObject.getString("errcode");
             if (StringUtil.isEmpty(str) == false && str.equals("1")) {
-                com.alibaba.fastjson.JSONObject hongbaoOb = jsonObject.getJSONObject ("data");
-                if(hongbaoOb != null) {
+                JSONObject hongbaoOb = jsonObject.getJSONObject("data");
+                if (hongbaoOb != null) {
                     lHongbao.clear();
-                    com.alibaba.fastjson.JSONArray arr = hongbaoOb.getJSONArray("bonus");//红包
-                    for (int i = 0 ; i < arr.size(); i++){
-                        com.alibaba.fastjson.JSONObject data = arr.getJSONObject(i);
+                    JSONArray arr = hongbaoOb.getJSONArray("bonus");//红包
+                    for (int i = 0; i < arr.size(); i++) {
+                        JSONObject data = arr.getJSONObject(i);
                         data.put("id", data.getString("bonus_id"));
                         data.put(KEYTAG, CANUSE);
                         lHongbao.add(data);
@@ -1151,16 +1114,16 @@ public class OrderConformActivity extends Activity {
 
                     lTicket.clear();
                     //去掉一次性从网络接口返回的优惠券，防止数据多次加载
-                    for (int i = lTicket.size() - 1 ; i >= 0 ; i--){
-                        com.alibaba.fastjson.JSONObject data = (com.alibaba.fastjson.JSONObject)lTicket.get(i);
-                        if("0".equals(data.getString("isuerinput"))){
+                    for (int i = lTicket.size() - 1; i >= 0; i--) {
+                        JSONObject data = (JSONObject) lTicket.get(i);
+                        if ("0".equals(data.getString("isuerinput"))) {
                             lTicket.remove(i);
                         }
                     }
 
                     arr = hongbaoOb.getJSONArray("coupons");//优惠券
-                    for (int i = 0 ; i < arr.size(); i++){
-                        com.alibaba.fastjson.JSONObject data = arr.getJSONObject(i);
+                    for (int i = 0; i < arr.size(); i++) {
+                        JSONObject data = arr.getJSONObject(i);
                         data.put("id", data.getString("code_str"));
                         data.put(KEYTAG, CANUSE);
                         data.put("isuerinput", "0");
@@ -1171,15 +1134,14 @@ public class OrderConformActivity extends Activity {
                 }
                 mHandler.post(new Runnable() {
                     public void run() {
-                        if(lHongbao.size() != 0){
+                        if (lHongbao.size() != 0) {
                             RelativeLayout layout = (RelativeLayout) findViewById(R.id.toolbar71);
                             layout.setVisibility(View.VISIBLE);
-                            TextView t = (TextView)findViewById(R.id.textview_no_hongbao);
+                            TextView t = (TextView) findViewById(R.id.textview_no_hongbao);
                             t.setVisibility(View.GONE);
                             setHeightByID(R.id.toolbar71, 160 + lHongbao.size() * 100);
-                        }
-                        else{
-                            TextView t = (TextView)findViewById(R.id.textview_no_hongbao);
+                        } else {
+                            TextView t = (TextView) findViewById(R.id.textview_no_hongbao);
                             t.setVisibility(View.VISIBLE);
                         }
 
@@ -1189,10 +1151,9 @@ public class OrderConformActivity extends Activity {
                         showSuccessUI();
                     }
                 });
-            }
-            else{
+            } else {
                 String strErrorMsg = jsonObject.getString("msg");
-                if(StringUtil.isEmpty(strErrorMsg))
+                if (StringUtil.isEmpty(strErrorMsg))
                     strErrorMsg = "验证码验证错误，稍后请重发验证码，并再次验证";
                 final String msgerr = strErrorMsg;
                 mHandler.post(new Runnable() {
@@ -1227,9 +1188,9 @@ public class OrderConformActivity extends Activity {
         mapData1.put("giftcardCode", "");
         mapData1.put("giftcardPwd", "");
         mapData1.put("giftcardKey", getCardNetArg());
-        mapData1.put("bonusNumber",getHongbaoNetArg());
+        mapData1.put("bonusNumber", getHongbaoNetArg());
         mapData1.put("goodsSku", getGoodAgr());
-        mapData1.put("token",mToken);
+        mapData1.put("token", mToken);
         mapData1.put("phone", obInfo.get("phone"));
         PickUpInfo info = MyApplication.GetInstance().getUserSelectAir();//(PickUpInfo) CacheUtilManager.getInstance().getDefaultCache().get(KEY_AIR_ATG);
         mapData1.put("deliverPlace", info.id);
@@ -1243,15 +1204,17 @@ public class OrderConformActivity extends Activity {
             String url = Constants.getServiceUrl();
             MyApplication.GetInstance().post(url, strJson, mbuyCallBack);
         } catch (Exception e) {
-            Logger.GetInstance().Exception(e.getMessage()+ " send data is :" + mapData.toJSONString());
+            Logger.GetInstance().Exception(e.getMessage() + " send data is :" + mapData.toJSONString());
         }
     }
 
 
     private class buyCallback implements INetWorkCallBack {
-        @Override public void PostProcess(int msgId, String msg) {
-            com.alibaba.fastjson.JSONObject jsonObject = JsonPostParamBuilder.parseJsonFromString(msg);;
-            final com.alibaba.fastjson.JSONObject aJsonObject  = jsonObject;
+        @Override
+        public void PostProcess(int msgId, String msg) {
+            JSONObject jsonObject = JsonPostParamBuilder.parseJsonFromString(msg);
+            ;
+            final JSONObject aJsonObject = jsonObject;
             hideDlg();
             NetExceptionAlert netExceptionAlert = new NetExceptionAlert(OrderConformActivity.this, null);
             if (netExceptionAlert.netExceptionProcess(msgId, msg)) {
@@ -1262,7 +1225,7 @@ public class OrderConformActivity extends Activity {
                     hideDlg();
                     String type = aJsonObject.getString("errcode");
                     if (type.equals("1")) {
-                        UserTrackMgr.getInstance().onEvent("tobuy","");
+                        UserTrackMgr.getInstance().onEvent("tobuy", "");
                         JSONObject data = aJsonObject.getJSONObject("data");
                         Intent intent = new Intent();
                         String strOrderID = data.getString("orderSn");
@@ -1273,25 +1236,31 @@ public class OrderConformActivity extends Activity {
                         intent.putExtra("successPayUrl", data.getString("successPayUrl"));
                         intent.putExtra("citOrderSn", data.getString("citOrderSn"));
                         int specialCount = data.getIntValue("SpecialCount");
-                        if(specialCount > 0){
+                        if (specialCount > 0) {
                             Intent it = new Intent();
                             it.setAction(getResources().getString(R.string.privilege_unbind_receiver));
                             sendBroadcast(it);
                         }
-                        PickUpInfo info = MyApplication.GetInstance().getUserSelectAir();;
+                        PickUpInfo info = MyApplication.GetInstance().getUserSelectAir();
+                        ;
                         intent.putExtra("whereget", info.name);
 
                         intent.setClass(OrderConformActivity.this, SelectPayTypeActivity.class);
                         startActivity(intent);
                         ShoppingCartMgr.getInstance().clear();
                         ShoppingCartMgr.getInstance().setColumns(null);
-                    }else {
+                    } else {
                         String errMsg = aJsonObject.getString("msg").toString();
                         CustomAlertDialog customAlertDialog = new CustomAlertDialog();
                         customAlertDialog.setMsgInfo(errMsg);
                         customAlertDialog.setAction(new CustomAlertDialog.Action() {
-                            @Override public void process() {}
-                            @Override public void close() {}
+                            @Override
+                            public void process() {
+                            }
+
+                            @Override
+                            public void close() {
+                            }
                         });
                         customAlertDialog.show(getFragmentManager(), "customAlertDialog");
                     }
@@ -1305,9 +1274,11 @@ public class OrderConformActivity extends Activity {
         ImageView tipTaxImageView = (ImageView) findViewById(R.id.tax_formula_desc);
         TextView taxFormulaTV = (TextView) findViewById(R.id.tax_formula);
         if ("1".equals(isTax)) {
+            Log.d("OrderConformActivity", "tax esixt");
             taxFormulaTV.setText(taxFormula);
             taxFormulaTV.setVisibility(View.VISIBLE);
         } else {
+            Log.d("OrderConformActivity", "tax not");
             tipTaxImageView.setVisibility(View.INVISIBLE);
             taxFormulaTV.setVisibility(View.GONE);
         }
@@ -1330,7 +1301,8 @@ public class OrderConformActivity extends Activity {
         mDrawerLayout = (DrawerLayout) findViewById(R.id.order_coform_drawer_layout);
         mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         linearLayout.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View view) {
+            @Override
+            public void onClick(View view) {
                 mDrawerLayout.openDrawer(mRightRelativeLayout);
             }
         });
@@ -1338,29 +1310,37 @@ public class OrderConformActivity extends Activity {
 
     public class ticketAdapter extends BaseAdapter {
         private LayoutInflater mInflater;
+
         public ticketAdapter(Context context) {
             this.mInflater = LayoutInflater.from(context);
         }
-        @Override public int getCount() {
+
+        @Override
+        public int getCount() {
             return lTicket.size();
         }
-        @Override public Object getItem(int position) {
+
+        @Override
+        public Object getItem(int position) {
             return null;
         }
-        @Override public long getItemId(int position) {
+
+        @Override
+        public long getItemId(int position) {
             return position;
         }
+
         public View getView(final int position, View convertView, ViewGroup parent) {
-            OrderConformActivity.ViewHolder holder = null;
+            ViewHolder holder = null;
             if (convertView == null) {
-                holder = new OrderConformActivity.ViewHolder();
+                holder = new ViewHolder();
                 convertView = mInflater.inflate(R.layout.orderitem, null);
                 holder.title = (TextView) convertView.findViewById(R.id.title);
                 holder.info = (TextView) convertView.findViewById(R.id.info);
                 holder.viewImage = (ImageView) convertView.findViewById(R.id.sItemIcon);
                 convertView.setTag(holder);
             } else {
-                holder = (OrderConformActivity.ViewHolder) convertView.getTag();
+                holder = (ViewHolder) convertView.getTag();
             }
             JSONObject j = (JSONObject) lTicket.get(position);
             holder.title.setText(getResources().getString(R.string.server_settle_moeny) + getJsonObjet(j, "reduce_money", ""));
@@ -1371,38 +1351,46 @@ public class OrderConformActivity extends Activity {
         }
     }
 
-    private void setHolderViewByStatus(String strStatus, OrderConformActivity.ViewHolder holder) {
-        holder.info.setTextColor(android.graphics.Color.parseColor("#676767"));
-        holder.title.setTextColor(android.graphics.Color.parseColor("#c18d56"));
+    private void setHolderViewByStatus(String strStatus, ViewHolder holder) {
+        holder.info.setTextColor(Color.parseColor("#676767"));
+        holder.title.setTextColor(Color.parseColor("#c18d56"));
         holder.viewImage.setImageResource(INUSE.equals(strStatus) ? R.drawable.select_1 : R.drawable.select_2);
     }
 
 
     public class cardAdapter extends BaseAdapter {
         private LayoutInflater mInflater;
+
         public cardAdapter(Context context) {
             this.mInflater = LayoutInflater.from(context);
         }
-        @Override public int getCount() {
+
+        @Override
+        public int getCount() {
             return lCard.size();
         }
-        @Override public Object getItem(int position) {
+
+        @Override
+        public Object getItem(int position) {
             return null;
         }
-        @Override public long getItemId(int position) {
+
+        @Override
+        public long getItemId(int position) {
             return 0;
         }
+
         public View getView(final int position, View convertView, ViewGroup parent) {
-            OrderConformActivity.ViewHolder holder = null;
+            ViewHolder holder = null;
             if (convertView == null) {
-                holder = new OrderConformActivity.ViewHolder();
+                holder = new ViewHolder();
                 convertView = mInflater.inflate(R.layout.orderitem, null);
                 holder.title = (TextView) convertView.findViewById(R.id.title);
                 holder.info = (TextView) convertView.findViewById(R.id.info);
                 holder.viewImage = (ImageView) convertView.findViewById(R.id.sItemIcon);
                 convertView.setTag(holder);
             } else {
-                holder = (OrderConformActivity.ViewHolder) convertView.getTag();
+                holder = (ViewHolder) convertView.getTag();
             }
 
             JSONObject j = (JSONObject) lCard.get(position);
@@ -1417,29 +1405,37 @@ public class OrderConformActivity extends Activity {
 
     public class hongbaoAdapter extends BaseAdapter {
         private LayoutInflater mInflater;
+
         public hongbaoAdapter(Context context) {
             this.mInflater = LayoutInflater.from(context);
         }
-        @Override public int getCount() {
+
+        @Override
+        public int getCount() {
             return lHongbao.size();
         }
-        @Override public Object getItem(int position) {
+
+        @Override
+        public Object getItem(int position) {
             return null;
         }
-        @Override public long getItemId(int position) {
+
+        @Override
+        public long getItemId(int position) {
             return 0;
         }
+
         public View getView(final int position, View convertView, ViewGroup parent) {
-            OrderConformActivity.ViewHolder holder = null;
+            ViewHolder holder = null;
             if (convertView == null) {
-                holder = new OrderConformActivity.ViewHolder();
+                holder = new ViewHolder();
                 convertView = mInflater.inflate(R.layout.orderitem, null);
                 holder.title = (TextView) convertView.findViewById(R.id.title);
                 holder.info = (TextView) convertView.findViewById(R.id.info);
                 holder.viewImage = (ImageView) convertView.findViewById(R.id.sItemIcon);
                 convertView.setTag(holder);
             } else {
-                holder = (OrderConformActivity.ViewHolder) convertView.getTag();
+                holder = (ViewHolder) convertView.getTag();
             }
 
             JSONObject j = (JSONObject) lHongbao.get(position);
@@ -1450,7 +1446,6 @@ public class OrderConformActivity extends Activity {
             return convertView;
         }
     }
-
 
 
     public void setGoodsImages() {
@@ -1464,7 +1459,7 @@ public class OrderConformActivity extends Activity {
             if (v != null) {
                 v.setVisibility(View.GONE);
                 LinearLayout mrlay = (LinearLayout) findViewById(R.id.toolbar6);
-                android.view.ViewGroup.LayoutParams pp = mrlay.getLayoutParams();
+                ViewGroup.LayoutParams pp = mrlay.getLayoutParams();
                 pp.height = 250;
                 mrlay.setLayoutParams(pp);
             }
@@ -1489,9 +1484,7 @@ public class OrderConformActivity extends Activity {
                 TextView btnCover = (TextView) findViewById(allCover[i]);
                 if (imgView == null || btnCover == null)
                     continue;
-//                ImageAware imageAware = new ImageViewAware(imgView, false);
-//        		ImageLoader.getInstance().displayImage(info.getString("goods_img"), imageAware, ImageHelper.initBarcodePathOption());
-                if(!TextUtils.isEmpty(info.getString("goods_img"))){
+                if (!TextUtils.isEmpty(info.getString("goods_img"))) {
                     Picasso.with(OrderConformActivity.this).load(info.getString("goods_img")).into(imgView);
                 }
                 String strT = info.getString("tax_display_txt");
@@ -1507,7 +1500,7 @@ public class OrderConformActivity extends Activity {
     public void setUserInfo() {
 
         String strTime = "";
-        if (ClosingRefInfoMgr.getInstance().isShopTypeOutside() == false) {
+        if (!ClosingRefInfoMgr.getInstance().isShopTypeOutside()) {
             strTime = ob.getString("deliverTime");
         } else {
             Calendar c = Calendar.getInstance();
@@ -1537,7 +1530,8 @@ public class OrderConformActivity extends Activity {
                 append("提货时间：").append(strTime);
         text.setText(builder.toString());
 
-        PickUpInfo info = MyApplication.GetInstance().getUserSelectAir();;//(PickUpInfo) CacheUtilManager.getInstance().getDefaultCache().get(KEY_AIR_ATG);
+        PickUpInfo info = MyApplication.GetInstance().getUserSelectAir();
+        ;//(PickUpInfo) CacheUtilManager.getInstance().getDefaultCache().get(KEY_AIR_ATG);
         String strAir = info.name;
         text = (TextView) findViewById(R.id.textview_info_2);
 
@@ -1559,7 +1553,7 @@ public class OrderConformActivity extends Activity {
     public JSONArray getGoodAgr() {
         JSONArray listReturn = new JSONArray();
         for (int i = 0; i < obGoods.size(); i++) {
-            com.alibaba.fastjson.JSONObject jsonobject = obGoods.getJSONObject(i);
+            JSONObject jsonobject = obGoods.getJSONObject(i);
             String s = jsonobject.getString("barcode");
             String s1 = jsonobject.getString("number");
             JSONObject map = new JSONObject();
@@ -1571,7 +1565,7 @@ public class OrderConformActivity extends Activity {
         return listReturn;
     }
 
-    public void setMoney() {
+    private void setMoney() {
         if (ob == null)
             return;
         String str = null;
@@ -1593,11 +1587,11 @@ public class OrderConformActivity extends Activity {
         text.setText(str);
 
         text = (TextView) findViewById(R.id.textview_info41);
-        text.setText("满件折优惠" +  "\n" + strMoney +
+        text.setText("满件折优惠" + "\n" + strMoney +
                 formatMoney(getJsonObjet(ob, "everyDiscountActive", "0")));
 
         text = (TextView) findViewById(R.id.textview_info42);
-        text.setText("每满减优惠" +  "\n" + strMoney +
+        text.setText("每满减优惠" + "\n" + strMoney +
                 formatMoney(getJsonObjet(ob, "everyFullActive", "0")));
 
         float f = getTicketMoney();
@@ -1623,7 +1617,8 @@ public class OrderConformActivity extends Activity {
 
         String all = getOrderPrice();
         text = (TextView) findViewById(R.id.textview_info8);
-        str = getResources().getString(R.string.server_settle_finalPrice) + "\n" + strMoney + formatMoney(all);;
+        str = getResources().getString(R.string.server_settle_finalPrice) + "\n" + strMoney + formatMoney(all);
+        ;
         text.setText(str);
 
 
@@ -1639,7 +1634,7 @@ public class OrderConformActivity extends Activity {
     public void setHeightByID(int id, int height) {
         RelativeLayout mrlay;
         mrlay = (RelativeLayout) findViewById(id);
-        android.view.ViewGroup.LayoutParams pp = mrlay.getLayoutParams();
+        ViewGroup.LayoutParams pp = mrlay.getLayoutParams();
         pp.height = height;
         mrlay.setLayoutParams(pp);
     }
@@ -1659,20 +1654,16 @@ public class OrderConformActivity extends Activity {
         return obGoods;
     }
 
-    public void setObGoods(JSONArray obGoods) {
-        this.obGoods = obGoods;
-    }
-
     public final class ViewHolder {
-        public TextView title;
-        public TextView info;
-        public ImageView viewImage;
+         TextView title;
+         TextView info;
+         ImageView viewImage;
     }
 
     public String formatMoney(String str) {
         int nIndex = str.indexOf(".00");
-        if(nIndex != -1)
-            str = str.substring(0,nIndex);
+        if (nIndex != -1)
+            str = str.substring(0, nIndex);
         return str;
     }
 
@@ -1693,7 +1684,7 @@ public class OrderConformActivity extends Activity {
         return str;
     }
 
-    public String JosnGetString(com.alibaba.fastjson.JSONObject ob, String key) {
+    public String JosnGetString(JSONObject ob, String key) {
         String strReturn = ob.getString(key);
         if (strReturn == null)
             strReturn = "";
@@ -1713,6 +1704,7 @@ public class OrderConformActivity extends Activity {
             mDialog = null;
         }
     }
+
     public void showToast(String msg) {
         final String _msg = msg;
         mHandler.post(new Runnable() {

@@ -412,6 +412,13 @@ public class HomeActivity extends AppCompatActivity {
             ContentRes.DataBean.TyPadIndexNewHotbrandBean bean = contentRes.getData().getTy_pad_index_new_hotbrand();
             View brandBanner = LayoutInflater.from(this).inflate(R.layout.home_banner, null);
             ImageView imgV = (ImageView) brandBanner.findViewById(R.id.banner_img);
+            imgV.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent it = new Intent(v.getContext(),BrandActivity.class);
+                    v.getContext().startActivity(it);
+                }
+            });
             if (!TextUtils.isEmpty(bean.getMore_brand_image())) {
                 Picasso.with(this).load(bean.getMore_brand_image()).into(imgV);
             }
