@@ -2,6 +2,7 @@ package com.hhyg.TyClosing.ui;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
@@ -33,11 +34,12 @@ import com.hhyg.TyClosing.entities.order.VaildateInfo;
 import com.hhyg.TyClosing.exceptions.ServiceMsgException;
 import com.hhyg.TyClosing.global.MyApplication;
 import com.hhyg.TyClosing.info.GoodSku;
-import com.hhyg.TyClosing.log.Logger;
 import com.hhyg.TyClosing.mgr.ClosingRefInfoMgr;
 import com.hhyg.TyClosing.ui.fragment.AutoSettleOrderItemsFragment;
+import com.hhyg.TyClosing.ui.fragment.order.BounsFragment;
+import com.hhyg.TyClosing.ui.fragment.order.CouponFragment;
+import com.hhyg.TyClosing.ui.fragment.order.GiftcardFragment;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
-import com.hhyg.TyClosing.util.StringUtil;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -75,6 +77,12 @@ public class OrderActivity extends AppCompatActivity {
     OrderSevice orderSevice;
     @Inject
     CompositeDisposable disposables;
+    @Inject
+    CouponFragment couponFragment;
+    @Inject
+    BounsFragment bounsFragment;
+    @Inject
+    GiftcardFragment giftcardFragment;
     MyTimer mTimer = new MyTimer(60000,1000);
     @BindView(R.id.user_infoleft)
     TextView userInfoleft;
@@ -219,9 +227,25 @@ public class OrderActivity extends AppCompatActivity {
         drawerLayout.openDrawer(Gravity.RIGHT);
     }
 
+    @OnClick({R.id.coupon_entry, R.id.bouns_entry, R.id.giftcard_entry})
+    public void onViewClicked(View view) {
+        switch (view.getId()) {
+            case R.id.coupon_entry:
+                couponFragment.show(getSupportFragmentManager(),"coupon");
+                break;
+            case R.id.bouns_entry:
+                bounsFragment.show(getSupportFragmentManager());
+                break;
+            case R.id.giftcard_entry:
+                giftcardFragment.show(getSupportFragmentManager());
+                break;
+        }
+    }
+
     @OnClick(R.id.button_get_code)
     public void onViewClicked3(final View view){
         view.setClickable(false);
+        view.setEnabled(false);
         Observable.just(commonParam)
                 .map(new Function<CommonParam, SecuryReq>() {
                     @Override
@@ -271,7 +295,6 @@ public class OrderActivity extends AppCompatActivity {
                     @Override
                     public void run() throws Exception {
                         ProgressDialogUtil.hide();
-                        getVaildateCode.setClickable(true);
                     }
                 })
                 .subscribe(new Observer<SendVaildateCodeRes>() {
@@ -294,7 +317,8 @@ public class OrderActivity extends AppCompatActivity {
                         }else{
                             Toasty.error(OrderActivity.this,getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
                         }
-
+                        getVaildateCode.setClickable(true);
+                        getVaildateCode.setEnabled(true);
                     }
 
                     @Override
@@ -310,7 +334,7 @@ public class OrderActivity extends AppCompatActivity {
         if(!TextUtils.isEmpty(input)){
 
         }else{
-            Toasty.error(this,"请输入验证码", Toast.LENGTH_SHORT).show();
+            Toasty.warning(this,"请输入验证码", Toast.LENGTH_SHORT).show();
         }
 
     }
@@ -328,13 +352,14 @@ public class OrderActivity extends AppCompatActivity {
 
         @Override
         public void onFinish() {
+            getVaildateCode.setEnabled(true);
             getVaildateCode.setClickable(true);
             getVaildateCode.setText("获取验证码");
         }
     }
 
     private void setGoodsImages() {
-        int nCount = vaildateInfo.getGoodsSku().size();
+        final int nCount = vaildateInfo.getGoodsSku().size();
         int nImageCount = 0;
         if (nCount >= 5) {
             nImageCount = 5;
@@ -347,15 +372,6 @@ public class OrderActivity extends AppCompatActivity {
             int allBtn[] = new int[]{R.id.button_goods2, R.id.button_goods3, R.id.button_goods4, R.id.button_goods5, R.id.button_goods7};
             int allCover[] = new int[]{R.id.button_Cover2, R.id.button_Cover3, R.id.button_Cover4, R.id.button_Cover5, R.id.button_Cover7};
 
-            for (int i = 0; i < 5; i++) {
-                ImageView btn = (ImageView) findViewById(allBtn[i]);
-                if (btn != null)
-                    btn.setVisibility(View.INVISIBLE);
-
-                TextView btnCover = (TextView) findViewById(allCover[i]);
-                if (btnCover != null)
-                    btnCover.setVisibility(View.INVISIBLE);
-            }
             for (int i = 0; i < nImageCount; i++) {
                 VaildateInfo.GoodsSkuBean bean = vaildateInfo.getGoodsSku().get(i) ;
                 ImageView imgView = (ImageView) findViewById(allBtn[i]);
@@ -366,11 +382,10 @@ public class OrderActivity extends AppCompatActivity {
                     Picasso.with(OrderActivity.this).load(bean.getGoods_img()).into(imgView);
                 }
                 String strT = bean.getTax_display_txt();
-                btnCover.setVisibility(StringUtil.isEmpty(strT) == false ? View.VISIBLE : View.INVISIBLE);
+                btnCover.setVisibility(!TextUtils.isEmpty(strT) ? View.VISIBLE : View.INVISIBLE);
                 imgView.setVisibility(View.VISIBLE);
             }
         } catch (Exception e) {
-            Logger.GetInstance().Exception(e.getMessage());
             e.printStackTrace();
         }
     }

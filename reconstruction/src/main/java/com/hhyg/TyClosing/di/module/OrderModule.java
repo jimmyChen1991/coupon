@@ -4,6 +4,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.hhyg.TyClosing.apiService.OrderSevice;
 import com.hhyg.TyClosing.info.GoodSku;
+import com.hhyg.TyClosing.ui.fragment.order.BounsFragment;
+import com.hhyg.TyClosing.ui.fragment.order.CouponFragment;
+import com.hhyg.TyClosing.ui.fragment.order.GiftcardFragment;
 
 import java.util.List;
 
@@ -46,5 +49,20 @@ public class OrderModule {
     @Provides
     CompositeDisposable provideDisposable(){
         return new CompositeDisposable();
+    }
+
+    @Provides
+    CouponFragment provideCouponFragment(){
+        return new CouponFragment();
+    }
+
+    @Provides
+    BounsFragment provideBounsFragment(){
+        return new BounsFragment();
+    }
+
+    @Provides
+    GiftcardFragment provideGiftFragment(){
+        return new GiftcardFragment();
     }
 }
