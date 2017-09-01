@@ -111,4 +111,6 @@
     <string name="price_def">价格区间 (元)</string>
     <string name="price_min">最低价</string>
     <string name="price_max">最高价</string>
+    <string name="empty_giftcard">暂时没有礼品卡哦～</string>
+    <string name="giftcard_warnning">*选择的礼品卡总金额必须小于订单金额，否则礼品卡不可用</string>
 </resources>

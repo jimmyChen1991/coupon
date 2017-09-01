@@ -16,10 +16,12 @@ import retrofit2.Retrofit;
 @Component(modules = {NetModule.class})
 public interface ApplicationComponent {
     void inject(MyApplication app);
-    @Named("serviceApi")
+    @Named("slowServiceApi")
     Retrofit getRetrofit();
     @Named("slowIndexApi")
     Retrofit getRetrofit2();
     @Named("fastIndexApi")
     Retrofit getRetrofit3();
+    @Named("fastServiceApi")
+    Retrofit getRetrofit4();
 }

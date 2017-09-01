@@ -38,7 +38,7 @@
         <ImageView
 		    android:id="@+id/headimg"
 		    android:layout_width="match_parent"
-		    android:layout_height="250dip" />
+		    android:layout_height="200dip" />
 		<com.hhyg.TyClosing.ui.view.TabPageIndicator
 		    android:id="@+id/indicator"
 		    android:layout_width="fill_parent"
@@ -50,8 +50,7 @@
 			android:layout_height="match_parent"
 			android:divider="#f2f2f2"
     		android:dividerHeight="15dip"
-    		android:listSelector="@android:color/transparent"
-			></com.hhyg.TyClosing.ui.view.InSideListView>
+    		android:listSelector="@android:color/transparent"/>
     </LinearLayout>
 </com.hhyg.TyClosing.ui.view.SPScrollview>
 <com.hhyg.TyClosing.ui.view.TabPageIndicator

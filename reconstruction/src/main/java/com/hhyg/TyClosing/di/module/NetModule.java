@@ -26,8 +26,15 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class NetModule {
     @Provides
     @Singleton
-    @Named("serviceApi")
+    @Named("slowServiceApi")
     Retrofit provideRetrofit(Converter.Factory convertFtry, CallAdapter.Factory adapterFtry,@Named("slowClient") OkHttpClient client,@Named("serviceUrl") String url){
+        return new Retrofit.Builder().baseUrl(url).client(client).addConverterFactory(convertFtry).addCallAdapterFactory(adapterFtry).build();
+    }
+
+    @Provides
+    @Singleton
+    @Named("fastServiceApi")
+    Retrofit provideRetrofit_S(Converter.Factory convertFtry, CallAdapter.Factory adapterFtry,@Named("fastClient") OkHttpClient client,@Named("serviceUrl") String url){
         return new Retrofit.Builder().baseUrl(url).client(client).addConverterFactory(convertFtry).addCallAdapterFactory(adapterFtry).build();
     }
 

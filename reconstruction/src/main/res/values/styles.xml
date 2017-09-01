@@ -105,4 +105,15 @@
         <item name="android:textColor">@color/privile_color</item>
         <item name="android:text">@string/privilege_label</item>
     </style>
+    <style name="BottomDialogFragment" parent="@android:style/Theme.Dialog">
+        <item name="android:windowTitleStyle">@null</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowAnimationStyle">@style/myBottomDialog.AnimationStyle</item>
+        <item name="android:windowSoftInputMode">adjustResize|stateHidden</item>
+    </style>
+    <style name="myBottomDialog.AnimationStyle" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/bottomdialog_in</item>
+        <item name="android:windowExitAnimation">@anim/bottomdialog_out</item>
+    </style>
 </resources>

@@ -2,13 +2,13 @@ package com.hhyg.TyClosing.ui;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -45,6 +45,7 @@ import com.squareup.picasso.Picasso;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -62,7 +63,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public class OrderActivity extends AppCompatActivity {
+public class OrderActivity extends AppCompatActivity{
 
     private static final String TAG = "OrderActivity";
 
@@ -74,7 +75,11 @@ public class OrderActivity extends AppCompatActivity {
     @Inject
     CommonParam commonParam;
     @Inject
-    OrderSevice orderSevice;
+    @Named("slowIndex")
+    OrderSevice indexOrderSevice;
+    @Inject
+    @Named("slowMsService")
+    OrderSevice msOrderSevice;
     @Inject
     CompositeDisposable disposables;
     @Inject
@@ -144,6 +149,7 @@ public class OrderActivity extends AppCompatActivity {
                 .orderModule(new OrderModule(getIntent().getStringExtra("data")))
                 .build()
                 .inject(this);
+        Log.d(TAG, "create");
         if (ClosingRefInfoMgr.getInstance().getLoginConfig().isCard_active()) {
             giftEntry.setVisibility(View.VISIBLE);
         } else {
@@ -231,21 +237,21 @@ public class OrderActivity extends AppCompatActivity {
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.coupon_entry:
-                couponFragment.show(getSupportFragmentManager(),"coupon");
+                couponFragment.show(getFragmentManager(),"coupon");
                 break;
             case R.id.bouns_entry:
-                bounsFragment.show(getSupportFragmentManager());
+                bounsFragment.show(getFragmentManager(),"bouns");
                 break;
             case R.id.giftcard_entry:
-                giftcardFragment.show(getSupportFragmentManager());
+                giftcardFragment.show(getFragmentManager(),"giftcard");
                 break;
         }
     }
 
     @OnClick(R.id.button_get_code)
     public void onViewClicked3(final View view){
-        view.setClickable(false);
         view.setEnabled(false);
+        getVaildateCode.setClickable(false);
         Observable.just(commonParam)
                 .map(new Function<CommonParam, SecuryReq>() {
                     @Override
@@ -260,7 +266,7 @@ public class OrderActivity extends AppCompatActivity {
                 .flatMap(new Function<SecuryReq, ObservableSource<SecuryRes>>() {
                     @Override
                     public ObservableSource<SecuryRes> apply(@NonNull SecuryReq securyReq) throws Exception {
-                        return orderSevice.secury(gson.toJson(securyReq));
+                        return indexOrderSevice.secury(gson.toJson(securyReq));
                     }
                 })
                 .map(new Function<SecuryRes, SendVaildateCodeReq>() {
@@ -278,7 +284,7 @@ public class OrderActivity extends AppCompatActivity {
                 .flatMap(new Function<SendVaildateCodeReq, ObservableSource<SendVaildateCodeRes>>() {
                     @Override
                     public ObservableSource<SendVaildateCodeRes> apply(@NonNull SendVaildateCodeReq sendVaildateCodeReq) throws Exception {
-                        return orderSevice.sendVaildateCode(gson.toJson(sendVaildateCodeReq));
+                        return indexOrderSevice.sendVaildateCode(gson.toJson(sendVaildateCodeReq));
                     }
                 })
                 .doOnNext(new Consumer<SendVaildateCodeRes>() {

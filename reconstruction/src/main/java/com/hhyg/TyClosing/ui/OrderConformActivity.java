@@ -621,7 +621,6 @@ public class OrderConformActivity extends AppCompatActivity {
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.coupon_entry:
-                couponFragment.show(getSupportFragmentManager());
                 break;
             case R.id.bouns_entry:
                 break;

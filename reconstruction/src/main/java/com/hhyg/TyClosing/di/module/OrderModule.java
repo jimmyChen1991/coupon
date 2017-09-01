@@ -3,6 +3,7 @@ package com.hhyg.TyClosing.di.module;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.hhyg.TyClosing.apiService.OrderSevice;
+import com.hhyg.TyClosing.entities.CommonParam;
 import com.hhyg.TyClosing.info.GoodSku;
 import com.hhyg.TyClosing.ui.fragment.order.BounsFragment;
 import com.hhyg.TyClosing.ui.fragment.order.CouponFragment;
@@ -42,7 +43,26 @@ public class OrderModule {
     }
 
     @Provides
+    @Named("slowIndex")
     OrderSevice provideSevice(@Named("slowIndexApi") Retrofit retrofit){
+        return retrofit.create(OrderSevice.class);
+    }
+
+    @Provides
+    @Named("fastIndex")
+    OrderSevice provideSevice2(@Named("fastIndexApi") Retrofit retrofit){
+        return retrofit.create(OrderSevice.class);
+    }
+
+    @Provides
+    @Named("slowMsService")
+    OrderSevice provideSevice3(@Named("slowServiceApi") Retrofit retrofit){
+        return retrofit.create(OrderSevice.class);
+    }
+
+    @Provides
+    @Named("fastMsService")
+    OrderSevice provideSevice4(@Named("fastServiceApi") Retrofit retrofit){
         return retrofit.create(OrderSevice.class);
     }
 
@@ -52,17 +72,23 @@ public class OrderModule {
     }
 
     @Provides
+    GiftcardFragment provideGiftcardFragment(@Named("fastIndex") OrderSevice indexSevice,@Named("fastMsService") OrderSevice msSevice,CommonParam param){
+        GiftcardFragment giftcardFragment = new GiftcardFragment();
+        giftcardFragment.setIndexSevice(indexSevice);
+        giftcardFragment.setMsSevice(msSevice);
+        giftcardFragment.setCommonParam(param);
+        return giftcardFragment;
+    }
+
+    @Provides
     CouponFragment provideCouponFragment(){
-        return new CouponFragment();
+        CouponFragment couponFragment = new CouponFragment();
+        return couponFragment;
     }
 
     @Provides
     BounsFragment provideBounsFragment(){
-        return new BounsFragment();
-    }
-
-    @Provides
-    GiftcardFragment provideGiftFragment(){
-        return new GiftcardFragment();
+        BounsFragment bounsFragment = new BounsFragment();
+        return bounsFragment;
     }
 }

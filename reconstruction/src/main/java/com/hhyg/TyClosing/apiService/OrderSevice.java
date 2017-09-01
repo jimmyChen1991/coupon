@@ -1,5 +1,6 @@
 package com.hhyg.TyClosing.apiService;
 
+import com.hhyg.TyClosing.entities.order.SearchGiftCardRes;
 import com.hhyg.TyClosing.entities.order.SecuryRes;
 import com.hhyg.TyClosing.entities.order.SendVaildateCodeRes;
 
@@ -22,6 +23,9 @@ public interface OrderSevice {
     @FormUrlEncoded
     Observable<SendVaildateCodeRes> sendVaildateCode (@Field("parameter") String parameter);
 
+    @POST("api/MSService.php")
+    @FormUrlEncoded
+    Observable<SearchGiftCardRes> searchGiftCard(@Field("parameter") String parameter);
 
 
 }

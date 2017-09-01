@@ -3,14 +3,14 @@ package com.hhyg.TyClosing.ui.fragment.order;
 import android.view.View;
 
 import com.hhyg.TyClosing.R;
+import com.hhyg.TyClosing.ui.fragment.BaseBottomDialogFragment;
 
-import me.shaohui.bottomdialog.BaseBottomDialog;
 
 /**
  * Created by user on 2017/8/28.
  */
 
-public class CouponFragment extends BaseBottomDialog{
+public class CouponFragment extends BaseBottomDialogFragment{
 
     @Override
     public int getLayoutRes() {
