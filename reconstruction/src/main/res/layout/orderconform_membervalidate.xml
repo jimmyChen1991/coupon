@@ -35,8 +35,7 @@
                 android:background="#cccccc"/>
 
         <TextView
-                android:id="@+id/prpmptmebere2"
-                android:layout_width="wrap_content"
+            android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="15dip"
                 android:layout_marginTop="10dip"
@@ -49,8 +48,7 @@
 
 
     <RelativeLayout
-            android:id="@+id/toolbarmeber2"
-            android:layout_width="match_parent"
+        android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#ffffff"
             android:layout_below="@+id/toolbarmeber1"

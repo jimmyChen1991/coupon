@@ -17,7 +17,5 @@
     </com.scwang.smartrefresh.layout.SmartRefreshLayout>
     <include
         layout="@layout/searcbar"/>
-    <include
-        android:id="@+id/bottom"
-        layout="@layout/tab_bottom"/>
+    <include layout="@layout/tab_bottom"/>
 </RelativeLayout>

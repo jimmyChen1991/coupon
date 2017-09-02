@@ -4,8 +4,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#f2f2f2"
-                android:id="@+id/mianshui">
+                android:background="#f2f2f2">
 
     <RelativeLayout
             android:id="@+id/toolbar"
@@ -78,8 +77,7 @@
                         android:layout_marginRight="15dp"/>
 
                 <TextView
-                        android:id="@+id/info1"
-                        android:layout_width="match_parent"
+                    android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="根据国家海关规定，离岛旅客购买免税商品需符合相应条件: \n\n1. 乘机人持有效居民身份证（年满16周岁）\n\n2. 已确定由海口/三亚离岛行程的国内航班\n\n3. 当年内未达到限购额度（海南本地居民额度：8000，限购买一次；非海南居民额度：16000，不限购买次数）"
                         android:textColor="#666666"
@@ -292,8 +290,7 @@
                 </RelativeLayout>
 
                 <RelativeLayout
-                        android:id="@+id/relativeLayout11"
-                        android:layout_width="match_parent"
+                    android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_below="@+id/relativeLayout9"
                         android:layout_alignParentLeft="true">

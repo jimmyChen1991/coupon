@@ -26,6 +26,10 @@ import com.hhyg.TyClosing.di.componet.DaggerOrderComponent;
 import com.hhyg.TyClosing.di.module.CommonNetParamModule;
 import com.hhyg.TyClosing.di.module.OrderModule;
 import com.hhyg.TyClosing.entities.CommonParam;
+import com.hhyg.TyClosing.entities.order.DiscountReq;
+import com.hhyg.TyClosing.entities.order.DiscountRes;
+import com.hhyg.TyClosing.entities.order.HasDiscountReq;
+import com.hhyg.TyClosing.entities.order.HasDiscountRes;
 import com.hhyg.TyClosing.entities.order.SecuryReq;
 import com.hhyg.TyClosing.entities.order.SecuryRes;
 import com.hhyg.TyClosing.entities.order.SendVaildateCodeReq;
@@ -42,6 +46,7 @@ import com.hhyg.TyClosing.ui.fragment.order.GiftcardFragment;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -76,7 +81,10 @@ public class OrderActivity extends AppCompatActivity{
     CommonParam commonParam;
     @Inject
     @Named("slowIndex")
-    OrderSevice indexOrderSevice;
+    OrderSevice slowIndexOrderSevice;
+    @Inject
+    @Named("fastIndex")
+    OrderSevice fastIndexOrderSevice;
     @Inject
     @Named("slowMsService")
     OrderSevice msOrderSevice;
@@ -89,6 +97,8 @@ public class OrderActivity extends AppCompatActivity{
     @Inject
     GiftcardFragment giftcardFragment;
     MyTimer mTimer = new MyTimer(60000,1000);
+    @BindView(R.id.contentWrap)
+    View contentWrap;
     @BindView(R.id.user_infoleft)
     TextView userInfoleft;
     @BindView(R.id.user_inforight)
@@ -149,29 +159,77 @@ public class OrderActivity extends AppCompatActivity{
                 .orderModule(new OrderModule(getIntent().getStringExtra("data")))
                 .build()
                 .inject(this);
-        Log.d(TAG, "create");
+
+        vaildateInfo = gson.fromJson(getIntent().getStringExtra("data"), VaildateInfo.class);
+
+        Observable.just(commonParam)
+                .map(new Function<CommonParam, HasDiscountReq>() {
+                    @Override
+                    public HasDiscountReq apply(@NonNull CommonParam param) throws Exception {
+                        HasDiscountReq req = new HasDiscountReq();
+                        HasDiscountReq.DataBean data = new HasDiscountReq.DataBean();
+                        data.setMobile_phone(vaildateInfo.getPhone());
+                        req.setData(data);
+                        req.setChannel(param.getChannelId());
+                        req.setImei(param.getImei());
+                        req.setShopid(param.getShopId());
+                        return req;
+                    }
+                })
+                .flatMap(new Function<HasDiscountReq, ObservableSource<HasDiscountRes>>() {
+                    @Override
+                    public ObservableSource<HasDiscountRes> apply(@NonNull HasDiscountReq hasDiscountReq) throws Exception {
+                        return fastIndexOrderSevice.checkAvailable(gson.toJson(hasDiscountReq));
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doFinally(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        contentWrap.setVisibility(View.VISIBLE);
+                        initUserInfo();
+                        setGoodsImages();
+                        AutoSettleOrderItemsFragment fragment =
+                                (AutoSettleOrderItemsFragment) (getFragmentManager().findFragmentById(R.id.orderDetailFragment));
+                        fragment.setData(goodData);
+                        setMoney();
+                    }
+                })
+                .subscribe(new Observer<HasDiscountRes>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        disposables.add(d);
+                    }
+
+                    @Override
+                    public void onNext(@NonNull HasDiscountRes hasDiscountRes) {
+                        if(hasDiscountRes.getErrcode() == 1){
+                            vaildateInfo.setAvailable(1);
+                            vipView.setVisibility(View.VISIBLE);
+                            vipName.setText("账户 ：" + vaildateInfo.getPhone());
+                        }else{
+                            vipView.setVisibility(View.GONE);
+                        }
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        Log.d(TAG, e.toString());
+                        vipView.setVisibility(View.GONE);
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
         if (ClosingRefInfoMgr.getInstance().getLoginConfig().isCard_active()) {
             giftEntry.setVisibility(View.VISIBLE);
         } else {
             getGiftSplit.setVisibility(View.GONE);
             giftEntry.setVisibility(View.GONE);
         }
-
-        vaildateInfo = gson.fromJson(getIntent().getStringExtra("data"), VaildateInfo.class);
-
-        if (vaildateInfo.getAvailable() == 1) {
-            vipView.setVisibility(View.VISIBLE);
-            vipName.setText("账户 ：" + vaildateInfo.getPhone());
-        } else {
-            vipView.setVisibility(View.GONE);
-        }
-
-        initUserInfo();
-        setGoodsImages();
-        AutoSettleOrderItemsFragment fragment =
-                (AutoSettleOrderItemsFragment) (getFragmentManager().findFragmentById(R.id.orderDetailFragment));
-        fragment.setData(goodData);
-        setMoney();
     }
 
     private void initUserInfo() {
@@ -266,7 +324,7 @@ public class OrderActivity extends AppCompatActivity{
                 .flatMap(new Function<SecuryReq, ObservableSource<SecuryRes>>() {
                     @Override
                     public ObservableSource<SecuryRes> apply(@NonNull SecuryReq securyReq) throws Exception {
-                        return indexOrderSevice.secury(gson.toJson(securyReq));
+                        return slowIndexOrderSevice.secury(gson.toJson(securyReq));
                     }
                 })
                 .map(new Function<SecuryRes, SendVaildateCodeReq>() {
@@ -284,7 +342,7 @@ public class OrderActivity extends AppCompatActivity{
                 .flatMap(new Function<SendVaildateCodeReq, ObservableSource<SendVaildateCodeRes>>() {
                     @Override
                     public ObservableSource<SendVaildateCodeRes> apply(@NonNull SendVaildateCodeReq sendVaildateCodeReq) throws Exception {
-                        return indexOrderSevice.sendVaildateCode(gson.toJson(sendVaildateCodeReq));
+                        return slowIndexOrderSevice.sendVaildateCode(gson.toJson(sendVaildateCodeReq));
                     }
                 })
                 .doOnNext(new Consumer<SendVaildateCodeRes>() {
@@ -337,10 +395,86 @@ public class OrderActivity extends AppCompatActivity{
     @OnClick(R.id.button_code_check)
     public void onViewClicked4(){
         final String input = vaildateCodeInput.getText().toString();
-        if(!TextUtils.isEmpty(input)){
-
-        }else{
+        if(TextUtils.isEmpty(input)){
             Toasty.warning(this,"请输入验证码", Toast.LENGTH_SHORT).show();
+        }else{
+            Observable.just(commonParam)
+                    .map(new Function<CommonParam, DiscountReq>() {
+                        @Override
+                        public DiscountReq apply(@NonNull CommonParam param) throws Exception {
+                            DiscountReq req = new DiscountReq();
+                            DiscountReq.DataBean data = new DiscountReq.DataBean();
+                            req.setChannel(param.getChannelId());
+                            req.setImei(param.getImei());
+                            req.setPlatformId(param.getPlatformId());
+                            req.setShopid(param.getShopId());
+                            data.setCode(input);
+                            data.setFinal_total_price(vaildateInfo.getFinalPrice());
+                            data.setDeliverplace(String.valueOf(ClosingRefInfoMgr.getInstance().getCurPickupId()));
+                            data.setMobile_phone(vaildateInfo.getPhone());
+                            data.setToken(vaildateInfo.getToken());
+                            List<DiscountReq.DataBean.GoodslistBean> goods = new ArrayList<DiscountReq.DataBean.GoodslistBean>();
+                            for (VaildateInfo.GoodsSkuBean bean : vaildateInfo.getGoodsSku()){
+                                DiscountReq.DataBean.GoodslistBean res = new DiscountReq.DataBean.GoodslistBean();
+                                res.setBarcode(bean.getBarcode());
+                                res.setNum(bean.getNumber());
+                                goods.add(res);
+                            }
+                            data.setGoodslist(goods);
+                            req.setData(data);
+                            return req;
+                        }
+                    })
+                    .flatMap(new Function<DiscountReq, ObservableSource<DiscountRes>>() {
+                        @Override
+                        public ObservableSource<DiscountRes> apply(@NonNull DiscountReq discountReq) throws Exception {
+                            return fastIndexOrderSevice.getDiscount(gson.toJson(discountReq));
+                        }
+                    })
+                    .doOnNext(new Consumer<DiscountRes>() {
+                        @Override
+                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                            if(discountRes.getErrcode() != 1){
+                                throw new ServiceMsgException(discountRes.getMsg());
+                            }
+                        }
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doFinally(new Action() {
+                        @Override
+                        public void run() throws Exception {
+                            ProgressDialogUtil.hide();
+                        }
+                    })
+                    .subscribe(new Observer<DiscountRes>() {
+                        @Override
+                        public void onSubscribe(@NonNull Disposable d) {
+                            disposables.add(d);
+                            ProgressDialogUtil.show(OrderActivity.this);
+                        }
+
+                        @Override
+                        public void onNext(@NonNull DiscountRes discountRes) {
+
+                        }
+
+                        @Override
+                        public void onError(@NonNull Throwable e) {
+                            if(e instanceof ServiceMsgException){
+                                Toasty.error(OrderActivity.this,e.getMessage(),Toast.LENGTH_SHORT).show();
+                            }else{
+                                Toasty.error(OrderActivity.this,getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                            }
+
+                        }
+
+                        @Override
+                        public void onComplete() {
+
+                        }
+                    });
+
         }
 
     }

@@ -16,10 +16,7 @@
         <item name="android:windowBackground">@android:color/background_dark</item>
     </style>
      <style name="AppTheme" parent="android:Theme.NoTitleBar"/>
-         <style name="AnimationPreview">
-           <item name="android:windowEnterAnimation">@anim/fade_in</item>  
-           <item name="android:windowExitAnimation">@anim/fade_out</item>
-       </style>
+
     <style name="new_atytheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/black</item>
     </style>
@@ -75,14 +72,8 @@
     </style>
         <style name="Widget">
     </style>
-    <style name = "activiteIndicator4Text">
-        <item name = "android:layout_width">60dip</item>
-        <item name = "android:layout_height">35dip</item>
-        <item name = "android:gravity">center</item>
-        <item name = "android:background">@drawable/rect_activebg</item>
-        <item name = "android:textColor">#ffffff</item>
-    </style>
-     <style name="DialogStyle" parent="@android:style/Theme.Dialog">  
+
+    <style name="DialogStyle" parent="@android:style/Theme.Dialog">
         <item name="android:windowBackground"> @android:color/transparent </item>  
         <item name="android:backgroundDimEnabled">false</item>  
     </style>
@@ -95,16 +86,7 @@
         <item name="android:textSize">15sp</item>
         <item name="android:textColor">@color/promotion</item>
     </style>
-    <style name="privilege_label">
-        <item name="android:paddingTop">1.8dp</item>
-        <item name="android:paddingBottom">1.8dp</item>
-        <item name="android:paddingLeft">5dp</item>
-        <item name="android:paddingRight">5dp</item>
-        <item name="android:background">@drawable/privilege_label_shape</item>
-        <item name="android:textSize">15sp</item>
-        <item name="android:textColor">@color/privile_color</item>
-        <item name="android:text">@string/privilege_label</item>
-    </style>
+
     <style name="BottomDialogFragment" parent="@android:style/Theme.Dialog">
         <item name="android:windowTitleStyle">@null</item>
         <item name="android:windowBackground">@android:color/transparent</item>

@@ -228,7 +228,6 @@
         </FrameLayout>
     </RelativeLayout>
     <RelativeLayout
-        android:id="@+id/drawer_right"
         android:layout_width="@dimen/drawerWidth"
         android:layout_height="match_parent"
         android:background="@color/ffffff"
@@ -256,7 +255,6 @@
             android:layout_height="60dp"
             android:layout_below="@+id/filter_title_split">
             <TextView
-                android:id="@+id/only_hasstock_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"

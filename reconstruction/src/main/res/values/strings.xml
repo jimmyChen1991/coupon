@@ -14,10 +14,7 @@
     <string name="search_indictor">可搜索品牌、商品~</string>
     <string name="saler_write">此处由体验店销售人员填写</string>
     <string name="saler_num">销售人员编号 : </string>
-    <string name="longline">———</string>
     <string name="bindcustomercode">关联客户码</string>
-    <string name="menu_settings">Settings</string>
-    <string name="soft_update_no">不更新</string>
     <string name="soft_update_title">软件更新</string>
     <string name="soft_update_info">更新信息</string>
     <string name="soft_update_failed">MD5校验失败</string>
@@ -28,27 +25,12 @@
     <string name="soft_update_cancel">取消更新</string>
     <string name="queding">确定</string>
     <string name="reset">重置</string>
-    <string name="warnning">温馨提示</string>
-    <string name="leavingText">您将退出本应用</string>
     <string name="cancel">取消</string>
-    <string name="IsFreeOfDutyLargerThanLimit">免税商品总额不能超过16000</string>
-    <string name="IsTaxGoodsCntLargerThanLimit">单次离岛限购一件有税商品</string>
-    <string name="IsTypeRestictionCntLargerThanLimit">G类商品单次离岛限购H件</string>
-    <string name="IsStockNotEnough">部分商品库存不足，请在购物车内调整购买数量</string>
-    <string name="scan_text1">将商品条码放入输入框内</string>
-    <string name="scan_text2">即可扫描加入购物车</string>
-    <string name="title_activity_history_order">HistoryOrderActivity</string>
-    <string name="hello_world">Hello world!</string>
     <string name="click_retry">点击重试</string>
     <string name="user_info">提货人信息</string>
 
     <string name="auto_settle_desc">· 立即支付：在当前设备自助完成后续资格验证、优惠券、礼品卡使用、支付等结算流程。</string>
     <string name="server_settle_desc">· 服务台支付：在服务台由结算员帮助您完成后续资格验证、优惠券、礼品卡使用、支付等结算流程。</string>
-
-    <string name="server_settle_userName">用户名:</string>
-    <string name="server_settle_idCard">身份证号:</string>
-    <string name="server_settle_flightNum">航班号:</string>
-    <string name="server_settle_flightDate">航班时间:</string>
 
     <string name="server_settle_moeny">￥</string>
     <string name="server_settle_goodsPrice">商品总价</string>
@@ -72,20 +54,16 @@
     <string name="selected">已选择 </string>
     <string name="rmb">￥</string>
     <string name="alert_loading_msg">请稍候...</string>
-    <string name="alert_loading_txt">请稍候...</string>
 
     <string name="pay_result_mpney">支付金额:</string>
     <string name="pay_result_order_number">订单编号:</string>
 
 
-    <string name="ticket_no_use">不满足使用条件</string>
     <string name="select_pay_type_order_number">订单提交成功,请尽快付款!订单号:</string>
 
     <string name="server_exception">服务器数据异常</string>
     <string name="netconnect_exception">网络异常</string>
-    <string name="serverresult_exception">响应数据为空</string>
     <string name="bind_privilege_code">绑定特权码</string>
-    <string name="privilege_label">特权</string>
     <string name="privilege_code">特权码</string>
     <string name="bind">绑定</string>
     <string name="cancel_bind">取消绑定</string>
@@ -104,7 +82,6 @@
     <string name="search_desc">desc</string>
 
     <string name="searchbartext">搜索商品</string>
-    <string name="price">价格</string>
     <string name="filter">筛选</string>
     <string name="all">全部</string>
     <string name="only_hasstock">仅看有货</string>

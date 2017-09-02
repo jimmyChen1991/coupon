@@ -76,8 +76,7 @@
         </LinearLayout>
 
         <LinearLayout
-                android:id="@+id/toolbar4"
-                android:layout_width="match_parent"
+            android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="#ffffff">
@@ -110,8 +109,7 @@
         </LinearLayout>
 
         <LinearLayout
-                android:id="@+id/toolbar41"
-                android:layout_width="match_parent"
+            android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="#ffffff">
@@ -144,8 +142,7 @@
         </LinearLayout>
 
         <LinearLayout
-                android:id="@+id/toolbar42"
-                android:layout_width="match_parent"
+            android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="#ffffff">
@@ -164,8 +161,7 @@
                     android:textSize="13sp"/>
 
             <ImageButton
-                    android:id="@+id/button_scan42"
-                    android:layout_width="6dip"
+                android:layout_width="6dip"
                     android:layout_toRightOf="@+id/textview_info2"
                     android:layout_height="wrap_content"
                     android:src="@drawable/plmoney"
@@ -199,8 +195,7 @@
                     android:textSize="13sp"/>
 
             <ImageButton
-                    android:id="@+id/button_scan5"
-                    android:layout_width="6dip"
+                android:layout_width="6dip"
                     android:layout_toRightOf="@+id/textview_info2"
                     android:layout_height="wrap_content"
                     android:src="@drawable/plmoney"
@@ -246,8 +241,7 @@
         </LinearLayout>
 
         <LinearLayout
-                android:id="@+id/toolbar61"
-                android:layout_width="match_parent"
+            android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="#ffffff">
@@ -266,8 +260,7 @@
                     android:textSize="13sp"/>
 
             <ImageButton
-                    android:id="@+id/button_scan61"
-                    android:layout_width="6dip"
+                android:layout_width="6dip"
                     android:layout_toRightOf="@+id/textview_info2"
                     android:layout_height="wrap_content"
                     android:src="@drawable/addmoney"
@@ -319,8 +312,7 @@
             </RelativeLayout>
 
             <ImageButton
-                    android:id="@+id/button_scan7"
-                    android:layout_width="6dip"
+                android:layout_width="6dip"
                     android:layout_toRightOf="@+id/textview_info2"
                     android:layout_height="wrap_content"
                     android:src="@drawable/equal"
@@ -352,8 +344,7 @@
                     android:textSize="13sp"/>
 
             <ImageButton
-                    android:id="@+id/button_scan8"
-                    android:layout_width="0dip"
+                android:layout_width="0dip"
                     android:layout_toRightOf="@+id/textview_info2"
                     android:layout_height="match_parent"
                     android:layout_marginTop="8dip"

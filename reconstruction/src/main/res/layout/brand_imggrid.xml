@@ -5,7 +5,6 @@
     android:orientation="vertical"
     android:background="@drawable/brandcate_shpae" >
 <LinearLayout
-    android:id="@+id/brandimgcontent"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingBottom="5dip"
@@ -20,8 +19,7 @@
         android:background="#ffffff"/>
 </LinearLayout>
 <ImageView
-        android:id="@+id/brandsplit"
-        android:layout_width="match_parent"
+    android:layout_width="match_parent"
         android:layout_height="1dip"
         android:background="#e5e5e5" />
 <TextView android:id="@+id/brandname"

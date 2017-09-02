@@ -1,7 +1,11 @@
 package com.hhyg.TyClosing.ui.fragment.order;
 
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.TextUtils;
+import android.text.style.AbsoluteSizeSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -13,11 +17,19 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.hhyg.TyClosing.R;
 import com.hhyg.TyClosing.apiService.OrderSevice;
+import com.hhyg.TyClosing.config.Constants;
 import com.hhyg.TyClosing.entities.CommonParam;
+import com.hhyg.TyClosing.entities.order.Giftcard;
 import com.hhyg.TyClosing.entities.order.SearchGiftCardReq;
 import com.hhyg.TyClosing.entities.order.SearchGiftCardRes;
+import com.hhyg.TyClosing.exceptions.ServiceMsgException;
 import com.hhyg.TyClosing.mgr.ClosingRefInfoMgr;
+import com.hhyg.TyClosing.ui.adapter.order.GiftcardAdapter;
 import com.hhyg.TyClosing.ui.fragment.BaseBottomDialogFragment;
+import com.hhyg.TyClosing.util.ProgressDialogUtil;
+import com.hhyg.TyClosing.util.TimeUtill;
+
+import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -30,6 +42,8 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
@@ -77,6 +91,12 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     private CommonParam commonParam;
     private OrderSevice indexSevice;
     private OrderSevice msSevice;
+    private Disposable disposable;
+    private ArrayList<Giftcard> cards = new ArrayList<>();
+    private GiftcardAdapter adapter;
+    public ArrayList<Giftcard> getCards() {
+        return cards;
+    }
 
     public String getToken() {
         return token;
@@ -103,6 +123,16 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     public void bindView(View v) {
         Log.d(TAG, "create");
         unbinder = ButterKnife.bind(this, v);
+        rv.setLayoutManager(new GridLayoutManager(getActivity(),2,GridLayoutManager.VERTICAL, false));
+        if(cards.size()!= 0){
+            adapter = new GiftcardAdapter(getActivity(),cards);
+            rv.setAdapter(adapter);
+            rvWrap.setVisibility(View.VISIBLE);
+            emptyView.setVisibility(View.GONE);
+        }else{
+            rvWrap.setVisibility(View.GONE);
+            emptyView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -125,6 +155,9 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
         super.onDestroyView();
         Log.d(TAG, "close");
         unbinder.unbind();
+        if(disposable != null && !disposable.isDisposed()){
+            disposable.dispose();
+        }
     }
 
     @OnClick(R.id.close)
@@ -150,11 +183,12 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                             req.setPlatformId(param.getPlatformId());
                             req.setChannel(param.getChannelId());
                             req.setImei(param.getImei());
+                            req.setDevice_type("android");
                             SearchGiftCardReq.DataBean data = new SearchGiftCardReq.DataBean();
                             data.setGiftCode(giftcardId.getText().toString());
                             data.setGiftPwd(giftPwd.getText().toString());
                             data.setGiftKey(token);
-                            data.setOrderPrice("0");
+                            data.setOrderPrice("2000");
                             req.setData(data);
                             return req;
                         }
@@ -166,22 +200,69 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                             return msSevice.searchGiftCard(gson.toJson(searchGiftCardReq));
                         }
                     })
+                    .doOnNext(new Consumer<SearchGiftCardRes>() {
+                        @Override
+                        public void accept(@NonNull SearchGiftCardRes searchGiftCardRes) throws Exception {
+                            if(searchGiftCardRes.getErrcode() != 1){
+                                throw new ServiceMsgException(searchGiftCardRes.getMsg());
+                            }
+                        }
+                    })
+                    .map(new Function<SearchGiftCardRes, Giftcard>() {
+                        @Override
+                        public Giftcard apply(@NonNull SearchGiftCardRes searchGiftCardRes) throws Exception {
+                            final SearchGiftCardRes.DataBean bean = searchGiftCardRes.getData();
+                            if(TextUtils.isEmpty(token)){
+                                token = bean.getTemp_order_key();
+                            }
+                            Giftcard card = new Giftcard(Giftcard.CARD);
+                            SpannableString spannableString = new SpannableString(Constants.PRICE_TITLE + String.valueOf(bean.getMoney()));
+                            spannableString.setSpan(new AbsoluteSizeSpan(15), 0, 1, Spannable.SPAN_INCLUSIVE_INCLUSIVE );
+                            card.setSpannableString(spannableString);
+                            card.setBarcode(card.getBarcode());
+                            card.setMoney(bean.getMoney());
+                            card.setTime_begin(TimeUtill.TimeStamp2Date(bean.getTime_begin()));
+                            card.setTime_end(TimeUtill.TimeStamp2Date(bean.getTime_end()));
+                            card.setBottemContent(TimeUtill.TimeStamp2Date(bean.getTime_begin()) +" ~ " + TimeUtill.TimeStamp2Date(bean.getTime_end()));
+                            return card;
+                        }
+                    })
                     .subscribeOn(Schedulers.io())
-                    .subscribeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<SearchGiftCardRes>() {
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doFinally(new Action() {
+                        @Override
+                        public void run() throws Exception {
+                            ProgressDialogUtil.hide();
+                        }
+                    })
+                    .subscribe(new Observer<Giftcard>() {
                         @Override
                         public void onSubscribe(@NonNull Disposable d) {
-
+                            disposable = d;
+                            ProgressDialogUtil.show(getActivity());
                         }
 
                         @Override
-                        public void onNext(@NonNull SearchGiftCardRes searchGiftCardRes) {
+                        public void onNext(@NonNull Giftcard giftcard) {
+                            cards.add(giftcard);
+                            if(adapter != null){
+                                adapter.notifyDataSetChanged();
+                            }else {
+                                adapter = new GiftcardAdapter(getActivity(),cards);
+                            }
+                            emptyView.setVisibility(View.GONE);
+                            rvWrap.setVisibility(View.VISIBLE);
+                            rv.setAdapter(adapter);
 
                         }
 
                         @Override
                         public void onError(@NonNull Throwable e) {
-
+                            if(e instanceof ServiceMsgException){
+                                Toasty.error(getActivity(),e.getMessage(),Toast.LENGTH_SHORT).show();
+                            }else {
+                                Toasty.error(getActivity(),getActivity().getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                            }
                         }
 
                         @Override

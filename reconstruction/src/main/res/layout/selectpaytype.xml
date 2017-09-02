@@ -19,8 +19,7 @@
                 android:layout_centerVertical="true"
                 android:layout_marginLeft="15dip"/>
         <TextView
-                android:id="@+id/textview_title1"
-                android:layout_width="wrap_content"
+            android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
                 android:text="选择支付方式"
@@ -60,8 +59,7 @@
     </RelativeLayout>
 
     <RelativeLayout
-            android:id="@+id/valueLayout2"
-            android:layout_height="wrap_content"
+        android:layout_height="wrap_content"
             android:layout_width="match_parent"
             android:layout_below="@+id/toolbar2"
             android:layout_marginLeft="20dp"
@@ -115,8 +113,7 @@
                 android:layout_marginBottom="16dp"/>
     </RelativeLayout>
     <RelativeLayout
-            android:id="@+id/bottom_bar3"
-            android:layout_width="match_parent"
+        android:layout_width="match_parent"
             android:layout_height="80dp"
             android:background="@drawable/bg"
             android:layout_marginLeft="15dp"

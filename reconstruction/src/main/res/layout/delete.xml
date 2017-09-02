@@ -20,8 +20,7 @@
 		        android:layout_marginLeft="15dip" />
 		
 		    <TextView
-		        android:id="@+id/textview_title"
-		        android:layout_width="wrap_content"
+                android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_centerHorizontal="true"
 		        android:layout_centerVertical="true"
@@ -46,8 +45,7 @@
 		    android:layout_below="@+id/toolbar" >
 		    
 	        <ImageView
-		        android:id="@+id/deletenull"
-		        android:layout_width ="wrap_content"
+                android:layout_width ="wrap_content"
 		        android:layout_height ="wrap_content"
 		        android:background="@drawable/deletenull"
 		        android:layout_marginTop="90dip"

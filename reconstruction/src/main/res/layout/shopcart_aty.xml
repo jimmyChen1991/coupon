@@ -19,7 +19,6 @@
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="10dip"/>
         <TextView
-            android:id="@+id/textview_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
@@ -46,7 +45,6 @@
         android:layout_below="@+id/toolbar" >
 
         <ImageView
-            android:id="@+id/shoppingcartnull"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
@@ -122,8 +120,8 @@
                 android:visibility="gone"
                 android:layout_marginLeft="5dip"
                 android:layout_marginRight="5dip"/>
-        <TextView android:id="@+id/lefttime"
-                android:layout_width="wrap_content"
+        <TextView
+            android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dip"
                 android:layout_marginLeft="20dip"
@@ -251,7 +249,5 @@
             android:textColor="#C38C56"
             android:textSize="15sp" />
     </RelativeLayout>
-<include 
-    android:id="@+id/bottom"
-    layout="@layout/tab_bottom"/>
+<include layout="@layout/tab_bottom"/>
 </RelativeLayout>

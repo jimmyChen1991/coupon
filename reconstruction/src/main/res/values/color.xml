@@ -9,7 +9,6 @@
     <color name="normal">#333333</color>
     <color name="light">#666666</color>
     <color name="delight">#999999</color>
-    <color name="rippelColor">#0099CC</color>
     <color name="gray">#dcdcdc</color>
     <color name="ffffff">#ffffff</color>
     <color name="privile_color">#AB79E9</color>
@@ -18,4 +17,5 @@
     <color name="cheap_price">#a40038</color>
     <color name="price">#cccccc</color>
     <color name="promotion">#d71818</color>
+    <color name="orange">#ff9600</color>
 </resources>

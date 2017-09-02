@@ -40,9 +40,8 @@
 		    android:layout_alignRight="@+id/img"
 	    /> 
 	</RelativeLayout>
-		<ImageView 
-	    	android:id="@+id/item_divider_height"
-	    	android:layout_width="698dip"
+		<ImageView
+            android:layout_width="698dip"
 	    	android:layout_height="12.5dip"
 	    	android:layout_below="@+id/imglayout"
 	    	android:layout_centerHorizontal="true"
