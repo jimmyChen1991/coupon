@@ -2,14 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="340dp"
     android:layout_height="90dp"
-    android:background="@drawable/shape_disable_ordercut"
+    android:background="@drawable/shape_giftcard"
     android:padding="@dimen/dp_1"
     >
     <RelativeLayout
         android:id="@+id/countWrap"
         android:layout_width="105dp"
         android:layout_height="match_parent"
-        android:background="#cccccc">
+        android:background="@color/coupon">
         <TextView
             android:id="@+id/count"
             android:layout_width="wrap_content"
@@ -35,13 +35,6 @@
             android:text="免税易购礼品卡"
             />
         <TextView
-            android:id="@+id/cardId"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/name"
-            android:textSize="@dimen/sp_15"
-            android:textColor="@color/light"/>
-        <TextView
             android:id="@+id/bottom_tv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -55,6 +48,6 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_alignParentRight="true"
-            android:background="@drawable/disable_ordercut"/>
+            android:background="@drawable/coupon_checked"/>
     </RelativeLayout>
 </LinearLayout>

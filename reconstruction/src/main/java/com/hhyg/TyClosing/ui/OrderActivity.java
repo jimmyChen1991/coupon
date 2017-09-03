@@ -1,5 +1,6 @@
 package com.hhyg.TyClosing.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v4.widget.DrawerLayout;
@@ -30,6 +31,8 @@ import com.hhyg.TyClosing.entities.order.DiscountReq;
 import com.hhyg.TyClosing.entities.order.DiscountRes;
 import com.hhyg.TyClosing.entities.order.HasDiscountReq;
 import com.hhyg.TyClosing.entities.order.HasDiscountRes;
+import com.hhyg.TyClosing.entities.order.OwnpayReq;
+import com.hhyg.TyClosing.entities.order.OwnpayRes;
 import com.hhyg.TyClosing.entities.order.SecuryReq;
 import com.hhyg.TyClosing.entities.order.SecuryRes;
 import com.hhyg.TyClosing.entities.order.SendVaildateCodeReq;
@@ -39,6 +42,11 @@ import com.hhyg.TyClosing.exceptions.ServiceMsgException;
 import com.hhyg.TyClosing.global.MyApplication;
 import com.hhyg.TyClosing.info.GoodSku;
 import com.hhyg.TyClosing.mgr.ClosingRefInfoMgr;
+import com.hhyg.TyClosing.mgr.OrderPrice;
+import com.hhyg.TyClosing.mgr.ShoppingCartMgr;
+import com.hhyg.TyClosing.ui.dialog.CustomAlertDialog;
+import com.hhyg.TyClosing.ui.dialog.CustomConfirmDialog;
+import com.hhyg.TyClosing.ui.dialog.OrderConfirmDialog;
 import com.hhyg.TyClosing.ui.fragment.AutoSettleOrderItemsFragment;
 import com.hhyg.TyClosing.ui.fragment.order.BounsFragment;
 import com.hhyg.TyClosing.ui.fragment.order.CouponFragment;
@@ -47,6 +55,7 @@ import com.hhyg.TyClosing.util.ProgressDialogUtil;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -68,7 +77,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public class OrderActivity extends AppCompatActivity{
+public class OrderActivity extends AppCompatActivity implements OrderPrice{
 
     private static final String TAG = "OrderActivity";
 
@@ -477,6 +486,139 @@ public class OrderActivity extends AppCompatActivity{
 
         }
 
+    }
+
+    @OnClick(R.id.button_goto_pay)
+    public void onViewClicked5(){
+        OrderConfirmDialog customConfirmDialog = new OrderConfirmDialog();
+        customConfirmDialog.setMsgInfo(gson.toJson(vaildateInfo.getUserInfo()));
+        customConfirmDialog.setConfirmBtnText(getString(R.string.goback_to_shopcart));
+        customConfirmDialog.setTime(vaildateInfo.getDeliverTime());
+        customConfirmDialog.setCancelBtnText(getString(R.string.queding));
+        customConfirmDialog.setAction(new CustomConfirmDialog.Action() {
+            @Override
+            public void process() {
+                ownpay();
+            }
+
+            @Override
+            public void cancel() {
+            }
+
+            @Override
+            public void close() {
+            }
+        });
+        customConfirmDialog.show(getFragmentManager(), "customConfirmDialog");
+
+    }
+
+    private void ownpay(){
+        Observable.just(vaildateInfo.getGoodsSku())
+                .map(new Function<List<VaildateInfo.GoodsSkuBean>, OwnpayReq.DataBean>() {
+                    @Override
+                    public OwnpayReq.DataBean apply(@NonNull List<VaildateInfo.GoodsSkuBean> goodsSkuBeen) throws Exception {
+                        OwnpayReq.DataBean data = new OwnpayReq.DataBean();
+                        ArrayList<OwnpayReq.DataBean.GoodsSkuBean> res = new ArrayList<>();
+                        for (VaildateInfo.GoodsSkuBean bean : goodsSkuBeen){
+                            OwnpayReq.DataBean.GoodsSkuBean sku = new OwnpayReq.DataBean.GoodsSkuBean();
+                            sku.setActivity(bean.getActivity());
+                            sku.setBarcode(bean.getBarcode());
+                            sku.setNumber(bean.getNumber());
+                            res.add(sku);
+                        }
+                        data.setGoodsSku(res);
+                        return data;
+                    }
+                })
+                .doOnNext(new Consumer<OwnpayReq.DataBean>() {
+                    @Override
+                    public void accept(@NonNull OwnpayReq.DataBean dataBean) throws Exception {
+                        dataBean.setFlightDate(vaildateInfo.getUserInfo().getFlightDate());
+                        dataBean.setFlightNum(vaildateInfo.getUserInfo().getFlightNum());
+                        dataBean.setDeliverPlace(ClosingRefInfoMgr.getInstance().getCurPickupId());
+                        dataBean.setDeliverTime(vaildateInfo.getDeliverTime());
+                        dataBean.setIdCard(vaildateInfo.getUserInfo().getIdCard());
+                        dataBean.setPhone(vaildateInfo.getUserInfo().getPhone());
+                        dataBean.setUserName(vaildateInfo.getUserInfo().getUserName());
+                        dataBean.setSubmitTime(new Date().getTime());
+                        dataBean.setToken(vaildateInfo.getToken());
+                    }
+                })
+                .map(new Function<OwnpayReq.DataBean, OwnpayReq>() {
+                    @Override
+                    public OwnpayReq apply(@NonNull OwnpayReq.DataBean dataBean) throws Exception {
+                        OwnpayReq req = new OwnpayReq();
+                        req.setImei(commonParam.getImei());
+                        req.setShopid(commonParam.getShopId());
+                        req.setChannel(commonParam.getChannelId());
+                        req.setPlatformId(commonParam.getPlatformId());
+                        req.setSaleId(ClosingRefInfoMgr.getInstance().getSalerId());
+                        req.setData(dataBean);
+                        return req;
+                    }
+                })
+                .flatMap(new Function<OwnpayReq, ObservableSource<OwnpayRes>>() {
+                    @Override
+                    public ObservableSource<OwnpayRes> apply(@NonNull OwnpayReq ownpayReq) throws Exception {
+                        return msOrderSevice.ownpay(gson.toJson(ownpayReq));
+                    }
+                })
+                .doOnNext(new Consumer<OwnpayRes>() {
+                    @Override
+                    public void accept(@NonNull OwnpayRes ownpayRes) throws Exception {
+                        if(ownpayRes.getErrcode() != 1){
+                            throw new ServiceMsgException(ownpayRes.getMsg());
+                        }
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doFinally(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        ProgressDialogUtil.hide();
+                    }
+                })
+                .subscribe(new Observer<OwnpayRes>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        disposables.add(d);
+                        ProgressDialogUtil.show(OrderActivity.this);
+                    }
+
+                    @Override
+                    public void onNext(@NonNull OwnpayRes ownpayRes) {
+                        Intent intent = new Intent();
+                        intent.putExtra("zhifubaourl", ownpayRes.getData().getAlipayUrl());
+                        intent.putExtra("weixinurl", ownpayRes.getData().getWxPayUrl());
+                        intent.putExtra("orderSn", ownpayRes.getData().getOrderSn());
+                        intent.putExtra("finalPrice", ownpayRes.getData().getFinalPrice());
+                        intent.putExtra("successPayUrl", ownpayRes.getData().getSuccessPayUrl());
+                        intent.putExtra("citOrderSn", ownpayRes.getData().getCitOrderSn());
+                        intent.putExtra("whereget", MyApplication.GetInstance().getUserSelectAir().name);
+                        intent.setClass(OrderActivity.this, SelectPayTypeActivity.class);
+                        startActivity(intent);
+                        ShoppingCartMgr.getInstance().clear();
+                        ShoppingCartMgr.getInstance().setColumns(null);
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        if(e instanceof ServiceMsgException){
+                            CustomAlertDialog customAlertDialog = new CustomAlertDialog();
+                            customAlertDialog.setMsgInfo(e.getMessage());
+                            customAlertDialog.show(getFragmentManager(), "customAlertDialog");
+                        }else{
+                            Toasty.error(OrderActivity.this,getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
     }
 
     private class MyTimer extends CountDownTimer{

@@ -81,8 +81,10 @@ public class OrderModule {
     }
 
     @Provides
-    CouponFragment provideCouponFragment(){
+    CouponFragment provideCouponFragment(@Named("fastIndex") OrderSevice indexSevice,CommonParam param){
         CouponFragment couponFragment = new CouponFragment();
+        couponFragment.setIndexSevice(indexSevice);
+        couponFragment.setCommonParam(param);
         return couponFragment;
     }
 

@@ -1,8 +1,9 @@
 package com.hhyg.TyClosing.apiService;
 
+import com.hhyg.TyClosing.entities.order.CheckGiftcardRes;
 import com.hhyg.TyClosing.entities.order.DiscountRes;
-import com.hhyg.TyClosing.entities.order.HasDiscountReq;
 import com.hhyg.TyClosing.entities.order.HasDiscountRes;
+import com.hhyg.TyClosing.entities.order.OwnpayRes;
 import com.hhyg.TyClosing.entities.order.SearchGiftCardRes;
 import com.hhyg.TyClosing.entities.order.SecuryRes;
 import com.hhyg.TyClosing.entities.order.SendVaildateCodeRes;
@@ -30,6 +31,10 @@ public interface OrderSevice {
     @FormUrlEncoded
     Observable<SearchGiftCardRes> searchGiftCard(@Field("parameter") String parameter);
 
+    @POST("api/MSService.php")
+    @FormUrlEncoded
+    Observable<OwnpayRes> ownpay(@Field("parameter") String parameter);
+
     @POST("index.php?r=couponsnew/getdiscount")
     @FormUrlEncoded
     Observable<DiscountRes> getDiscount(@Field("parameter") String parameter);
@@ -37,5 +42,9 @@ public interface OrderSevice {
     @POST("index.php?r=couponsnew/hascouponsorcash")
     @FormUrlEncoded
     Observable<HasDiscountRes> checkAvailable(@Field("parameter") String parameter);
+
+    @POST("index.php?r=giftcard/checkin")
+    @FormUrlEncoded
+    Observable<CheckGiftcardRes> setCardStatus(@Field("parameter") String parameter);
 
 }

@@ -18,4 +18,6 @@
     <color name="price">#cccccc</color>
     <color name="promotion">#d71818</color>
     <color name="orange">#ff9600</color>
+    <color name="bouns">#ec3636</color>
+    <color name="coupon">#1895e4</color>
 </resources>

@@ -89,5 +89,8 @@
     <string name="price_min">最低价</string>
     <string name="price_max">最高价</string>
     <string name="empty_giftcard">暂时没有礼品卡哦～</string>
+    <string name="empty_bouns">暂时没有红包哦～</string>
+    <string name="empty_coupon">暂时没有优惠券哦～</string>
     <string name="giftcard_warnning">*选择的礼品卡总金额必须小于订单金额，否则礼品卡不可用</string>
+    <string name="bouns_warnning">*一笔订单限使用一个红包</string>
 </resources>

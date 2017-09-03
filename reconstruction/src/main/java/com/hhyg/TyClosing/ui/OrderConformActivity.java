@@ -733,8 +733,8 @@ public class OrderConformActivity extends AppCompatActivity {
                         updateAll();
                         double d = Double.parseDouble(getJsonObjet(ob, "finalPrice", "0.00"));
                         float fleftMoney = (float) d - getTicketMoney() - getCardMoney();
-                        if (fleftMoney > Float.parseFloat(getJsonObjet(data, "money", "0")))
-                            cancelCard(Input, CANUSE);
+//                        if (fleftMoney > Float.parseFloat(getJsonObjet(data, "money", "0")))
+//                            cancelCard(Input, CANUSE);
                     }
                 });
             } else {

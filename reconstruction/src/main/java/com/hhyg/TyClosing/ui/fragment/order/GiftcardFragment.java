@@ -14,6 +14,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.google.gson.Gson;
 import com.hhyg.TyClosing.R;
 import com.hhyg.TyClosing.apiService.OrderSevice;
@@ -27,6 +28,8 @@ import com.hhyg.TyClosing.mgr.ClosingRefInfoMgr;
 import com.hhyg.TyClosing.ui.adapter.order.GiftcardAdapter;
 import com.hhyg.TyClosing.ui.fragment.BaseBottomDialogFragment;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
+import com.hhyg.TyClosing.util.SpannableUtil;
+import com.hhyg.TyClosing.util.StringUtil;
 import com.hhyg.TyClosing.util.TimeUtill;
 
 import java.util.ArrayList;
@@ -70,8 +73,6 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
          http://wangwangexps.mianshui365.net/api/MSService.php?r=giftcard/search
         {"device_type":"android","platformId":3,"imei":"11391e0ce75b9f42","data":{"orderPrice":"830.00","giftKey":"","giftCode":"7926983897248028992","giftPwd":"200226"},"shopid":"1","op":"getgiftcard","channel":673,"saleId":"8"}
      */
-    @BindView(R.id.close)
-    ImageButton close;
     @BindView(R.id.giftcard_id)
     EditText giftcardId;
     @BindView(R.id.gift_pwd)
@@ -94,6 +95,12 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     private Disposable disposable;
     private ArrayList<Giftcard> cards = new ArrayList<>();
     private GiftcardAdapter adapter;
+    private GiftcardListener giftcardListener;
+
+    public void setGiftcardListener(GiftcardListener giftcardListener) {
+        this.giftcardListener = giftcardListener;
+    }
+
     public ArrayList<Giftcard> getCards() {
         return cards;
     }
@@ -124,9 +131,20 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
         Log.d(TAG, "create");
         unbinder = ButterKnife.bind(this, v);
         rv.setLayoutManager(new GridLayoutManager(getActivity(),2,GridLayoutManager.VERTICAL, false));
+        adapter = new GiftcardAdapter(getActivity(),cards);
+        adapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
+                Giftcard card = cards.get(position);
+                if(card.getItemType() != Giftcard.CARD){
+
+                }else{
+
+                }
+            }
+        });
+        rv.setAdapter(adapter);
         if(cards.size()!= 0){
-            adapter = new GiftcardAdapter(getActivity(),cards);
-            rv.setAdapter(adapter);
             rvWrap.setVisibility(View.VISIBLE);
             emptyView.setVisibility(View.GONE);
         }else{
@@ -216,15 +234,21 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                                 token = bean.getTemp_order_key();
                             }
                             Giftcard card = new Giftcard(Giftcard.CARD);
-                            SpannableString spannableString = new SpannableString(Constants.PRICE_TITLE + String.valueOf(bean.getMoney()));
-                            spannableString.setSpan(new AbsoluteSizeSpan(15), 0, 1, Spannable.SPAN_INCLUSIVE_INCLUSIVE );
+                            SpannableString spannableString = SpannableUtil.discountSpan(bean.getMoney());
                             card.setSpannableString(spannableString);
-                            card.setBarcode(card.getBarcode());
+                            card.setBarcode(bean.getBarcode());
                             card.setMoney(bean.getMoney());
                             card.setTime_begin(TimeUtill.TimeStamp2Date(bean.getTime_begin()));
                             card.setTime_end(TimeUtill.TimeStamp2Date(bean.getTime_end()));
                             card.setBottemContent(TimeUtill.TimeStamp2Date(bean.getTime_begin()) +" ~ " + TimeUtill.TimeStamp2Date(bean.getTime_end()));
                             return card;
+                        }
+                    })
+                    .doOnNext(new Consumer<Giftcard>() {
+                        @Override
+                        public void accept(@NonNull Giftcard giftcard) throws Exception {
+                            cards.add(cards.size() - 1,giftcard);
+                            cards.add(giftcard);
                         }
                     })
                     .subscribeOn(Schedulers.io())
@@ -244,16 +268,9 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
 
                         @Override
                         public void onNext(@NonNull Giftcard giftcard) {
-                            cards.add(giftcard);
-                            if(adapter != null){
-                                adapter.notifyDataSetChanged();
-                            }else {
-                                adapter = new GiftcardAdapter(getActivity(),cards);
-                            }
+                            adapter.notifyDataSetChanged();
                             emptyView.setVisibility(View.GONE);
                             rvWrap.setVisibility(View.VISIBLE);
-                            rv.setAdapter(adapter);
-
                         }
 
                         @Override
@@ -274,4 +291,13 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
 
     }
 
+    @OnClick(R.id.use_card)
+    public void onViewClicked2(){
+
+
+    }
+
+    public interface GiftcardListener{
+        void onDisableAllcard();
+    }
 }
