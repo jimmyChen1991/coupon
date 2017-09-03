@@ -83,11 +83,20 @@ public class DiscountReq {
          */
 
         private String deliverplace;
-        private String final_total_price;
+        private double final_total_price;
         private String mobile_phone;
         private String code;
         private String token;
+        private int needcheckcode;
         private List<GoodslistBean> goodslist;
+
+        public void setNeedcheckcode(int needcheckcode) {
+            this.needcheckcode = needcheckcode;
+        }
+
+        public int getNeedcheckcode() {
+            return needcheckcode;
+        }
 
         public String getDeliverplace() {
             return deliverplace;
@@ -97,11 +106,11 @@ public class DiscountReq {
             this.deliverplace = deliverplace;
         }
 
-        public String getFinal_total_price() {
+        public double getFinal_total_price() {
             return final_total_price;
         }
 
-        public void setFinal_total_price(String final_total_price) {
+        public void setFinal_total_price(double final_total_price) {
             this.final_total_price = final_total_price;
         }
 

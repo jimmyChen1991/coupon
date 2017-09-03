@@ -15,7 +15,7 @@ public class ExchangecouponReq {
      * data : {"exchangecode":"299337980453174"}
      */
 
-    private String op;
+    private String op = "getcoupons";
     private String channel;
     private String imei;
     private String shopid;

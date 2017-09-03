@@ -98,16 +98,16 @@ public class SearchGiftCardReq {
          * giftPwd : JqctQ3oyLvM=
          */
 
-        private String orderPrice;
+        private double orderPrice;
         private String giftKey;
         private String giftCode;
         private String giftPwd;
 
-        public String getOrderPrice() {
+        public double getOrderPrice() {
             return orderPrice;
         }
 
-        public void setOrderPrice(String orderPrice) {
+        public void setOrderPrice(double orderPrice) {
             this.orderPrice = orderPrice;
         }
 

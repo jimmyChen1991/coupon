@@ -5,5 +5,5 @@ package com.hhyg.TyClosing.mgr;
  */
 
 public interface OrderPrice {
-
+    double getFianlPrice();
 }

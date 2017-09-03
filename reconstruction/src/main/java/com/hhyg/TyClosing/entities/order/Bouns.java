@@ -22,6 +22,15 @@ public class Bouns implements MultiItemEntity {
     private String effective_date;
     private boolean used;
     private SpannableString spannableString;
+    private boolean available;
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
 
     public void setSpannableString(SpannableString spannableString) {
         this.spannableString = spannableString;

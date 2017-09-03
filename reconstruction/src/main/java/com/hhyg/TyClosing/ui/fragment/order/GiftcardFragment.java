@@ -23,6 +23,7 @@ import com.hhyg.TyClosing.entities.order.SearchGiftCardReq;
 import com.hhyg.TyClosing.entities.order.SearchGiftCardRes;
 import com.hhyg.TyClosing.exceptions.ServiceMsgException;
 import com.hhyg.TyClosing.mgr.ClosingRefInfoMgr;
+import com.hhyg.TyClosing.mgr.OrderPrice;
 import com.hhyg.TyClosing.ui.adapter.order.GiftcardAdapter;
 import com.hhyg.TyClosing.ui.fragment.BaseBottomDialogFragment;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
@@ -93,6 +94,11 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     private ArrayList<Giftcard> cards = new ArrayList<>();
     private GiftcardAdapter adapter;
     private GiftcardOp giftcardOp;
+    private OrderPrice orderPrice;
+
+    public void setOrderPrice(OrderPrice orderPrice) {
+        this.orderPrice = orderPrice;
+    }
 
     public void setGiftcardListener(GiftcardOp giftcardOp) {
         this.giftcardOp = giftcardOp;
@@ -152,7 +158,9 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                 if(card.getItemType() != Giftcard.CARD){
 
                 }else{
-                   checkTheCard(card);
+                    if(card.isAvailable()){
+                        checkTheCard(card);
+                    }
                 }
             }
         });
@@ -219,7 +227,8 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                     public void onNext(@NonNull CheckGiftcardRes checkGiftcardRes) {
                         Toasty.success(getActivity(),checkGiftcardRes.getMsg(),Toast.LENGTH_SHORT).show();
                         giftcard.setUsed(checkGiftcardRes.getData().getCheckFlag() == 1 );
-                        adapter.notifyDataSetChanged();
+                        onSelectedItemChange();
+                        giftcardOp.onSelectedGift();
                     }
 
                     @Override
@@ -240,6 +249,18 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                 });
 
 
+    }
+
+    public synchronized void onSelectedItemChange(){
+        double thePrice = orderPrice.getFianlPrice();
+        for (Giftcard giftcard : cards){
+            if(giftcard.getMoney() <= thePrice){
+                giftcard.setAvailable(false);
+            }else {
+                giftcard.setAvailable(true);
+            }
+        }
+        adapter.notifyDataSetChanged();
     }
 
     @Override
@@ -297,7 +318,7 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                             data.setGiftCode(giftcardId.getText().toString());
                             data.setGiftPwd(giftPwd.getText().toString());
                             data.setGiftKey(token);
-                            data.setOrderPrice("2000");
+                            data.setOrderPrice(orderPrice.getFianlPrice());
                             req.setData(data);
                             return req;
                         }
@@ -394,6 +415,6 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     }
 
     public interface GiftcardOp{
-        void onDisableAllcard();
+        void onSelectedGift();
     }
 }

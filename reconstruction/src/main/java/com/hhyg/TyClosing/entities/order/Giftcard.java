@@ -25,6 +25,15 @@ public class Giftcard implements MultiItemEntity {
     private SpannableString spannableString;
     private String timeTv;
     private boolean used;
+    private boolean available;
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
 
     public void setTimeTv(String timeTv) {
         this.timeTv = timeTv;

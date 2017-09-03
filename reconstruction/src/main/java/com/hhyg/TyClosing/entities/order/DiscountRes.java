@@ -70,22 +70,22 @@ public class DiscountRes {
         }
 
         public static class CouponsBean {
-            private List<USABLEBean> USABLE;
-            private List<UNUSABLEBean> UNUSABLE;
+            private List<CouponBean> USABLE;
+            private List<CouponBean> UNUSABLE;
 
-            public List<USABLEBean> getUSABLE() {
+            public List<CouponBean> getUSABLE() {
                 return USABLE;
             }
 
-            public void setUSABLE(List<USABLEBean> USABLE) {
+            public void setUSABLE(List<CouponBean> USABLE) {
                 this.USABLE = USABLE;
             }
 
-            public List<UNUSABLEBean> getUNUSABLE() {
+            public List<CouponBean> getUNUSABLE() {
                 return UNUSABLE;
             }
 
-            public void setUNUSABLE(List<UNUSABLEBean> UNUSABLE) {
+            public void setUNUSABLE(List<CouponBean> UNUSABLE) {
                 this.UNUSABLE = UNUSABLE;
             }
 

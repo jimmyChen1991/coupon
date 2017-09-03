@@ -107,9 +107,7 @@
         <android.support.v7.widget.RecyclerView
             android:id="@+id/rv"
             android:layout_width="match_parent"
-            android:layout_height="500dp"
-            android:paddingTop="@dimen/dp_15"
-            android:paddingLeft="@dimen/dp_15"
+            android:layout_height="375dp"
             android:paddingRight="@dimen/dp_15">
         </android.support.v7.widget.RecyclerView>
         <Button

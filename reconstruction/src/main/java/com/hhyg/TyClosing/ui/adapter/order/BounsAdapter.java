@@ -38,7 +38,7 @@ public class BounsAdapter extends BaseMultiItemQuickAdapter<Bouns,BaseViewHolder
                     helper.getView(R.id.countWrap).setBackgroundResource(R.color.bouns);
                     helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.bouns_checked);
                 }else{
-                    helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_disable_alldiscount);
+                    helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_disable_ordercut);
                     helper.getView(R.id.countWrap).setBackgroundResource(R.color.price);
                     helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable_ordercut);
                 }

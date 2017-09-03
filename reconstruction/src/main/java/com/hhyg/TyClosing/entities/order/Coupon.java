@@ -34,8 +34,17 @@ public class Coupon implements MultiItemEntity{
     private SpannableString spannableString;
     private boolean used;
     private boolean enable;
+    private boolean available;
     private int count;
     private String nameTv;
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
 
     public void setNameTv(String nameTv) {
         this.nameTv = nameTv;

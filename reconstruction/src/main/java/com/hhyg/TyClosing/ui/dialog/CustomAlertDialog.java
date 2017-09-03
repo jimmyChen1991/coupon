@@ -54,7 +54,9 @@ public class CustomAlertDialog extends DialogFragment {
         confirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                action.process();
+                if(action != null){
+                    action.process();
+                }
                 dialog.dismiss();
             }
         });
@@ -63,7 +65,9 @@ public class CustomAlertDialog extends DialogFragment {
             @Override
             public void onClick(View view) {
                 dialog.dismiss();
-                action.close();
+                if(action != null){
+                    action.close();
+                }
             }
         });
 

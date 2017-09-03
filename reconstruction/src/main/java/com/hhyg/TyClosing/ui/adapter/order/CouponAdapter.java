@@ -1,5 +1,8 @@
 package com.hhyg.TyClosing.ui.adapter.order;
 
+import android.graphics.Color;
+import android.widget.TextView;
+
 import com.chad.library.adapter.base.BaseMultiItemQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.hhyg.TyClosing.R;
@@ -30,10 +33,13 @@ public class CouponAdapter extends BaseMultiItemQuickAdapter<Coupon,BaseViewHold
     protected void convert(BaseViewHolder helper, Coupon item) {
         switch (helper.getItemViewType()){
             case Coupon.TITLE:
+                TextView tv = helper.getView(R.id.title) ;
                 if(item.isEnable()){
                     helper.setText(R.id.title,"此单可用 （" + item.getCount() + "）");
+                    tv.setTextColor(Color.parseColor("#C38C56"));
                 }else{
                     helper.setText(R.id.title,"此单不可用 （" + item.getCount() + "）");
+                    tv.setTextColor(Color.parseColor("#333333"));
                 }
                 break;
             case Coupon.DISABLE:
@@ -48,15 +54,15 @@ public class CouponAdapter extends BaseMultiItemQuickAdapter<Coupon,BaseViewHold
                     helper.getView(R.id.countWrap).setBackgroundResource(R.color.coupon);
                     helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.coupon_checked); helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable_ordercut);
                 }else{
-                    helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_disable_alldiscount);
+                    helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_disable_ordercut);
                     helper.getView(R.id.countWrap).setBackgroundResource(R.color.price);
                     helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable_ordercut);
                 }
 
-                if(item.isEnable()){
+                if(item.isEnable() ){
 
                 }else{
-
+                    helper.setText(R.id.bottom_tv,item.getUnavailableReason());
                 }
                 break;
 

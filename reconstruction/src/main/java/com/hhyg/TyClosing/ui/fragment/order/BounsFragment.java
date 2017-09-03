@@ -12,6 +12,7 @@ import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.hhyg.TyClosing.R;
 import com.hhyg.TyClosing.entities.order.Bouns;
 import com.hhyg.TyClosing.entities.order.Giftcard;
+import com.hhyg.TyClosing.mgr.OrderPrice;
 import com.hhyg.TyClosing.ui.adapter.order.BounsAdapter;
 import com.hhyg.TyClosing.ui.fragment.BaseBottomDialogFragment;
 
@@ -38,6 +39,20 @@ public class BounsFragment extends BaseBottomDialogFragment {
     Unbinder unbinder;
     private BounsAdapter adapter;
     private ArrayList<Bouns> bounses = new ArrayList<>();
+    private OrderPrice orderPrice;
+    private BounsOp bounsOp;
+
+    public ArrayList<Bouns> getBounses() {
+        return bounses;
+    }
+
+    public void setOrderPrice(OrderPrice orderPrice) {
+        this.orderPrice = orderPrice;
+    }
+
+    public void setBounsOp(BounsOp bounsOp) {
+        this.bounsOp = bounsOp;
+    }
 
     public void setBounses(ArrayList<Bouns> bounses) {
         this.bounses = bounses;
@@ -81,7 +96,30 @@ public class BounsFragment extends BaseBottomDialogFragment {
         adapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-
+                Bouns item = bounses.get(position);
+                if(item.getItemType() == Bouns.DISABLE){
+                    for (Bouns bean : bounses){
+                        if(bean.isUsed()){
+                            bean.setUsed(false);
+                            onSelectedItemChange();
+                            bounsOp.onSelectBouns();
+                            break;
+                        }
+                    }
+                }else{
+                    if(item.isAvailable()){
+                        if(item.isUsed()){
+                            item.setUsed(false);
+                        }else{
+                            for(Bouns bean : bounses){
+                                bean.setUsed(false);
+                            }
+                            item.setUsed(true);
+                        }
+                        onSelectedItemChange();
+                        bounsOp.onSelectBouns();
+                    }
+                }
             }
         });
         rv.setAdapter(adapter);
@@ -92,6 +130,18 @@ public class BounsFragment extends BaseBottomDialogFragment {
             rvWrap.setVisibility(View.GONE);
             emptyView.setVisibility(View.VISIBLE);
         }
+    }
+
+    public synchronized void onSelectedItemChange(){
+        double thePrice = orderPrice.getFianlPrice();
+        for (Bouns bouns : bounses){
+            if(bouns.getMoney() <= thePrice){
+                bouns.setAvailable(false);
+            }else {
+                bouns.setAvailable(true);
+            }
+        }
+        adapter.notifyDataSetChanged();
     }
 
     @Override
@@ -126,8 +176,6 @@ public class BounsFragment extends BaseBottomDialogFragment {
     }
 
     public interface BounsOp{
-
-        void onSelectBouns(final String id);
-
+        void onSelectBouns();
     }
 }

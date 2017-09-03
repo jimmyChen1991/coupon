@@ -29,8 +29,10 @@ import com.hhyg.TyClosing.di.module.OrderModule;
 import com.hhyg.TyClosing.entities.CommonParam;
 import com.hhyg.TyClosing.entities.order.Bouns;
 import com.hhyg.TyClosing.entities.order.Coupon;
+import com.hhyg.TyClosing.entities.order.CouponBean;
 import com.hhyg.TyClosing.entities.order.DiscountReq;
 import com.hhyg.TyClosing.entities.order.DiscountRes;
+import com.hhyg.TyClosing.entities.order.Giftcard;
 import com.hhyg.TyClosing.entities.order.HasDiscountReq;
 import com.hhyg.TyClosing.entities.order.HasDiscountRes;
 import com.hhyg.TyClosing.entities.order.OwnpayReq;
@@ -53,6 +55,7 @@ import com.hhyg.TyClosing.ui.fragment.AutoSettleOrderItemsFragment;
 import com.hhyg.TyClosing.ui.fragment.order.BounsFragment;
 import com.hhyg.TyClosing.ui.fragment.order.CouponFragment;
 import com.hhyg.TyClosing.ui.fragment.order.GiftcardFragment;
+import com.hhyg.TyClosing.util.CouponUtil;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
 import com.hhyg.TyClosing.util.SpannableUtil;
 import com.hhyg.TyClosing.util.TimeUtill;
@@ -81,7 +84,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public class OrderActivity extends AppCompatActivity implements OrderPrice,CouponFragment.CouponOp,BounsFragment.BounsOp,GiftcardFragment.GiftcardOp{
+public class OrderActivity extends AppCompatActivity implements OrderPrice,CouponFragment.CouponOp,BounsFragment.BounsOp,GiftcardFragment.GiftcardOp {
 
     private static final String TAG = "OrderActivity";
 
@@ -112,7 +115,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     BounsFragment bounsFragment;
     @Inject
     GiftcardFragment giftcardFragment;
-    MyTimer mTimer = new MyTimer(60000,1000);
+    MyTimer mTimer = new MyTimer(60000, 1000);
     @BindView(R.id.contentWrap)
     View contentWrap;
     @BindView(R.id.user_infoleft)
@@ -177,7 +180,8 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                 .inject(this);
 
         vaildateInfo = gson.fromJson(getIntent().getStringExtra("data"), VaildateInfo.class);
-
+        setMoney();
+        initDiscountFragment();
         Observable.just(commonParam)
                 .map(new Function<CommonParam, HasDiscountReq>() {
                     @Override
@@ -209,7 +213,6 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         AutoSettleOrderItemsFragment fragment =
                                 (AutoSettleOrderItemsFragment) (getFragmentManager().findFragmentById(R.id.orderDetailFragment));
                         fragment.setData(goodData);
-                        setMoney();
                     }
                 })
                 .subscribe(new Observer<HasDiscountRes>() {
@@ -220,11 +223,11 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
                     @Override
                     public void onNext(@NonNull HasDiscountRes hasDiscountRes) {
-                        if(hasDiscountRes.getErrcode() == 1){
+                        if (hasDiscountRes.getErrcode() == 1) {
                             vaildateInfo.setAvailable(1);
                             vipView.setVisibility(View.VISIBLE);
                             vipName.setText("账户 ：" + vaildateInfo.getPhone());
-                        }else{
+                        } else {
                             vipView.setVisibility(View.GONE);
                         }
                     }
@@ -246,6 +249,15 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
             getGiftSplit.setVisibility(View.GONE);
             giftEntry.setVisibility(View.GONE);
         }
+    }
+
+    private void initDiscountFragment() {
+        couponFragment.setCouponOp(this);
+        couponFragment.setOrderPrice(this);
+        giftcardFragment.setGiftcardListener(this);
+        giftcardFragment.setOrderPrice(this);
+        bounsFragment.setBounsOp(this);
+        bounsFragment.setOrderPrice(this);
     }
 
     private void initUserInfo() {
@@ -303,7 +315,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     }
 
     @OnClick(R.id.imgWrap)
-    public void onViewClicked2(){
+    public void onViewClicked2() {
         drawerLayout.openDrawer(Gravity.RIGHT);
     }
 
@@ -311,19 +323,19 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.coupon_entry:
-                couponFragment.show(getFragmentManager(),"coupon");
+                couponFragment.show(getFragmentManager(), "coupon");
                 break;
             case R.id.bouns_entry:
-                bounsFragment.show(getFragmentManager(),"bouns");
+                bounsFragment.show(getFragmentManager(), "bouns");
                 break;
             case R.id.giftcard_entry:
-                giftcardFragment.show(getFragmentManager(),"giftcard");
+                giftcardFragment.show(getFragmentManager(), "giftcard");
                 break;
         }
     }
 
     @OnClick(R.id.button_get_code)
-    public void onViewClicked3(final View view){
+    public void onViewClicked3(final View view) {
         view.setEnabled(false);
         getVaildateCode.setClickable(false);
         Observable.just(commonParam)
@@ -364,7 +376,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                 .doOnNext(new Consumer<SendVaildateCodeRes>() {
                     @Override
                     public void accept(@NonNull SendVaildateCodeRes sendVaildateCodeRes) throws Exception {
-                        if(sendVaildateCodeRes.getErrcode() != 1){
+                        if (sendVaildateCodeRes.getErrcode() != 1) {
                             throw new ServiceMsgException(sendVaildateCodeRes.getMsg());
                         }
                     }
@@ -386,16 +398,16 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
                     @Override
                     public void onNext(@NonNull SendVaildateCodeRes sendVaildateCodeRes) {
-                        Toasty.success(OrderActivity.this,sendVaildateCodeRes.getMsg(),Toast.LENGTH_SHORT).show();
+                        Toasty.success(OrderActivity.this, sendVaildateCodeRes.getMsg(), Toast.LENGTH_SHORT).show();
                         mTimer.start();
                     }
 
                     @Override
                     public void onError(@NonNull Throwable e) {
-                        if(e instanceof ServiceMsgException){
-                            Toasty.error(OrderActivity.this,e.getMessage(),Toast.LENGTH_SHORT).show();
-                        }else{
-                            Toasty.error(OrderActivity.this,getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                        if (e instanceof ServiceMsgException) {
+                            Toasty.error(OrderActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toasty.error(OrderActivity.this, getString(R.string.netconnect_exception), Toast.LENGTH_SHORT).show();
                         }
                         getVaildateCode.setClickable(true);
                         getVaildateCode.setEnabled(true);
@@ -409,36 +421,16 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     }
 
     @OnClick(R.id.button_code_check)
-    public void onViewClicked4(){
+    public void onViewClicked4() {
         final String input = vaildateCodeInput.getText().toString();
-        if(TextUtils.isEmpty(input)){
-            Toasty.warning(this,"请输入验证码", Toast.LENGTH_SHORT).show();
-        }else{
+        if (TextUtils.isEmpty(input)) {
+            Toasty.warning(this, "请输入验证码", Toast.LENGTH_SHORT).show();
+        } else {
             Observable.just(commonParam)
                     .map(new Function<CommonParam, DiscountReq>() {
                         @Override
                         public DiscountReq apply(@NonNull CommonParam param) throws Exception {
-                            DiscountReq req = new DiscountReq();
-                            DiscountReq.DataBean data = new DiscountReq.DataBean();
-                            req.setChannel(param.getChannelId());
-                            req.setImei(param.getImei());
-                            req.setPlatformId(param.getPlatformId());
-                            req.setShopid(param.getShopId());
-                            data.setCode(input);
-                            data.setFinal_total_price(vaildateInfo.getFinalPrice());
-                            data.setDeliverplace(String.valueOf(ClosingRefInfoMgr.getInstance().getCurPickupId()));
-                            data.setMobile_phone(vaildateInfo.getPhone());
-                            data.setToken(vaildateInfo.getToken());
-                            List<DiscountReq.DataBean.GoodslistBean> goods = new ArrayList<DiscountReq.DataBean.GoodslistBean>();
-                            for (VaildateInfo.GoodsSkuBean bean : vaildateInfo.getGoodsSku()){
-                                DiscountReq.DataBean.GoodslistBean res = new DiscountReq.DataBean.GoodslistBean();
-                                res.setBarcode(bean.getBarcode());
-                                res.setNum(bean.getNumber());
-                                goods.add(res);
-                            }
-                            data.setGoodslist(goods);
-                            req.setData(data);
-                            return req;
+                            return getDiscountReq(input,true);
                         }
                     })
                     .flatMap(new Function<DiscountReq, ObservableSource<DiscountRes>>() {
@@ -450,7 +442,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                     .doOnNext(new Consumer<DiscountRes>() {
                         @Override
                         public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            if(discountRes.getErrcode() != 1){
+                            if (discountRes.getErrcode() != 1) {
                                 throw new ServiceMsgException(discountRes.getMsg());
                             }
                         }
@@ -458,8 +450,8 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                     .doOnNext(new Consumer<DiscountRes>() {
                         @Override
                         public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            if(discountRes.getData().getBonus() != null && discountRes.getData().getBonus().size() != 0){
-                                for(DiscountRes.DataBean.BonusBean bean : discountRes.getData().getBonus()){
+                            if (discountRes.getData().getBonus() != null && discountRes.getData().getBonus().size() != 0) {
+                                for (DiscountRes.DataBean.BonusBean bean : discountRes.getData().getBonus()) {
                                     Bouns bouns = new Bouns(Bouns.BOUNS);
                                     bouns.setSpannableString(SpannableUtil.discountSpan(bean.getMoney()));
                                     bouns.setMoney(bean.getMoney());
@@ -477,63 +469,37 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         @Override
                         public void accept(@NonNull DiscountRes discountRes) throws Exception {
                             final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
-                            if(couponsBean != null && couponsBean.getUSABLE() != null && couponsBean.getUSABLE().size() != 0){
+                            if (couponsBean != null && couponsBean.getUSABLE() != null && couponsBean.getUSABLE().size() != 0) {
                                 Coupon title = new Coupon(Coupon.TITLE);
                                 title.setEnable(true);
                                 title.setCount(couponsBean.getUSABLE().size());
                                 couponFragment.addCoupon(title);
-                                for (int index = 0;index < couponsBean.getUSABLE().size() ;index ++){
-                                    DiscountRes.DataBean.CouponsBean.USABLEBean res = couponsBean.getUSABLE().get(index);
+                                for (int index = 0; index < couponsBean.getUSABLE().size(); index++) {
+                                    CouponBean res = couponsBean.getUSABLE().get(index);
                                     Coupon coupon = new Coupon(Coupon.COUPON);
-                                    coupon.setCode_str(res.getCode_str());
-                                    coupon.setConflict(res.getConflict());
-                                    coupon.setDiscountDesc(res.getDiscountDesc());
-                                    coupon.setName(res.getName());
-                                    coupon.setIs_new(res.getIs_new());
-                                    coupon.setIsEntire(res.getIsEntire());
-                                    coupon.setEnd_time(res.getEnd_time());
-                                    coupon.setStart_time(res.getStart_time());
-                                    coupon.setReached_money(res.getReached_money());
-                                    coupon.setReduce_money(res.getReduce_money());
-                                    coupon.setTimeTv(TimeUtill.TimeStamp2Date(res.getStart_time()) +" ~ " + TimeUtill.TimeStamp2Date(res.getEnd_time()));
-                                    coupon.setSpannableString(SpannableUtil.discountSpan(res.getReduce_money()));
-                                    coupon.setEnable(true);
-                                    coupon.setNameTv("【" + res.getName() + "】" + res.getDiscountDesc());
+                                    CouponUtil.initCoupon(res, coupon);
                                     couponFragment.addCoupon(coupon);
                                 }
                                 Coupon disable = new Coupon(Coupon.DISABLE);
                                 disable.setEnable(true);
                                 couponFragment.addCoupon(disable);
                             }
-
                         }
                     })
                     .doOnNext(new Consumer<DiscountRes>() {
                         @Override
                         public void accept(@NonNull DiscountRes discountRes) throws Exception {
                             final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
-                            if(couponsBean != null && couponsBean.getUNUSABLE() != null && couponsBean.getUNUSABLE().size() != 0){
+                            if (couponsBean != null && couponsBean.getUNUSABLE() != null && couponsBean.getUNUSABLE().size() != 0) {
                                 Coupon title = new Coupon(Coupon.TITLE);
                                 title.setEnable(false);
                                 title.setCount(couponsBean.getUNUSABLE().size());
                                 couponFragment.addCoupon(title);
-                                for (int index = 0;index < couponsBean.getUNUSABLE().size() ;index ++){
-                                    DiscountRes.DataBean.CouponsBean.UNUSABLEBean res = couponsBean.getUNUSABLE().get(index);
+                                for (int index = 0; index < couponsBean.getUNUSABLE().size(); index++) {
+                                    CouponBean res = couponsBean.getUNUSABLE().get(index);
                                     Coupon coupon = new Coupon(Coupon.COUPON);
-                                    coupon.setCode_str(res.getCode_str());
-                                    coupon.setConflict(res.getConflict());
-                                    coupon.setDiscountDesc(res.getDiscountDesc());
-                                    coupon.setName(res.getName());
-                                    coupon.setIs_new(res.getIs_new());
-                                    coupon.setIsEntire(res.getIsEntire());
-                                    coupon.setEnd_time(res.getEnd_time());
-                                    coupon.setStart_time(res.getStart_time());
-                                    coupon.setReached_money(res.getReached_money());
-                                    coupon.setReduce_money(res.getReduce_money());
-                                    coupon.setTimeTv(TimeUtill.TimeStamp2Date(res.getStart_time()) +" ~ " + TimeUtill.TimeStamp2Date(res.getEnd_time()));
-                                    coupon.setSpannableString(SpannableUtil.discountSpan(res.getReduce_money()));
                                     coupon.setEnable(false);
-                                    coupon.setNameTv("【" + res.getName() + "】" + res.getDiscountDesc());
+                                    CouponUtil.initCoupon(res,coupon);
                                     couponFragment.addCoupon(coupon);
                                 }
                             }
@@ -556,15 +522,15 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
                         @Override
                         public void onNext(@NonNull DiscountRes discountRes) {
-                            Toasty.success(OrderActivity.this,discountRes.getMsg(),Toast.LENGTH_SHORT).show();
+                            Toasty.success(OrderActivity.this, discountRes.getMsg(), Toast.LENGTH_SHORT).show();
                         }
 
                         @Override
                         public void onError(@NonNull Throwable e) {
-                            if(e instanceof ServiceMsgException){
-                                Toasty.error(OrderActivity.this,e.getMessage(),Toast.LENGTH_SHORT).show();
-                            }else {
-                                Toasty.error(OrderActivity.this,getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                            if (e instanceof ServiceMsgException) {
+                                Toasty.error(OrderActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toasty.error(OrderActivity.this, getString(R.string.netconnect_exception), Toast.LENGTH_SHORT).show();
                             }
                             Log.d(TAG, e.toString());
 
@@ -580,8 +546,34 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
     }
 
+    private DiscountReq getDiscountReq(String input,boolean needCheckCode) {
+        DiscountReq req = new DiscountReq();
+        DiscountReq.DataBean data = new DiscountReq.DataBean();
+        req.setChannel(commonParam.getChannelId());
+        req.setImei(commonParam.getImei());
+        req.setPlatformId(commonParam.getPlatformId());
+        req.setShopid(commonParam.getShopId());
+//        data.setNeedcheckcode(needCheckCode ? 1 : 0);
+        data.setNeedcheckcode(0);
+        data.setCode(input);
+        data.setFinal_total_price(getFianlPrice());
+        data.setDeliverplace(String.valueOf(ClosingRefInfoMgr.getInstance().getCurPickupId()));
+        data.setMobile_phone(vaildateInfo.getPhone());
+        data.setToken(vaildateInfo.getToken());
+        List<DiscountReq.DataBean.GoodslistBean> goods = new ArrayList<DiscountReq.DataBean.GoodslistBean>();
+        for (VaildateInfo.GoodsSkuBean bean : vaildateInfo.getGoodsSku()) {
+            DiscountReq.DataBean.GoodslistBean res = new DiscountReq.DataBean.GoodslistBean();
+            res.setBarcode(bean.getBarcode());
+            res.setNum(bean.getNumber());
+            goods.add(res);
+        }
+        data.setGoodslist(goods);
+        req.setData(data);
+        return req;
+    }
+
     @OnClick(R.id.button_goto_pay)
-    public void onViewClicked5(){
+    public void onViewClicked5() {
         OrderConfirmDialog customConfirmDialog = new OrderConfirmDialog();
         customConfirmDialog.setMsgInfo(gson.toJson(vaildateInfo.getUserInfo()));
         customConfirmDialog.setConfirmBtnText(getString(R.string.goback_to_shopcart));
@@ -605,14 +597,14 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
     }
 
-    private void ownpay(){
+    private void ownpay() {
         Observable.just(vaildateInfo.getGoodsSku())
                 .map(new Function<List<VaildateInfo.GoodsSkuBean>, OwnpayReq.DataBean>() {
                     @Override
                     public OwnpayReq.DataBean apply(@NonNull List<VaildateInfo.GoodsSkuBean> goodsSkuBeen) throws Exception {
                         OwnpayReq.DataBean data = new OwnpayReq.DataBean();
                         ArrayList<OwnpayReq.DataBean.GoodsSkuBean> res = new ArrayList<>();
-                        for (VaildateInfo.GoodsSkuBean bean : goodsSkuBeen){
+                        for (VaildateInfo.GoodsSkuBean bean : goodsSkuBeen) {
                             OwnpayReq.DataBean.GoodsSkuBean sku = new OwnpayReq.DataBean.GoodsSkuBean();
                             sku.setActivity(bean.getActivity());
                             sku.setBarcode(bean.getBarcode());
@@ -629,12 +621,14 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         dataBean.setFlightDate(vaildateInfo.getUserInfo().getFlightDate());
                         dataBean.setFlightNum(vaildateInfo.getUserInfo().getFlightNum());
                         dataBean.setDeliverPlace(ClosingRefInfoMgr.getInstance().getCurPickupId());
-                        dataBean.setDeliverTime(vaildateInfo.getDeliverTime());
+//                        dataBean.setDeliverTime(vaildateInfo.getDeliverTime());
                         dataBean.setIdCard(vaildateInfo.getUserInfo().getIdCard());
+                        dataBean.setDeliverTime("2017-09-03 23:37");
                         dataBean.setPhone(vaildateInfo.getUserInfo().getPhone());
                         dataBean.setUserName(vaildateInfo.getUserInfo().getUserName());
                         dataBean.setSubmitTime(new Date().getTime());
                         dataBean.setToken(vaildateInfo.getToken());
+                        dataBean.setCouponCode("sdazzx");
                     }
                 })
                 .map(new Function<OwnpayReq.DataBean, OwnpayReq>() {
@@ -659,7 +653,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                 .doOnNext(new Consumer<OwnpayRes>() {
                     @Override
                     public void accept(@NonNull OwnpayRes ownpayRes) throws Exception {
-                        if(ownpayRes.getErrcode() != 1){
+                        if (ownpayRes.getErrcode() != 1) {
                             throw new ServiceMsgException(ownpayRes.getMsg());
                         }
                     }
@@ -697,12 +691,12 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
                     @Override
                     public void onError(@NonNull Throwable e) {
-                        if(e instanceof ServiceMsgException){
+                        if (e instanceof ServiceMsgException) {
                             CustomAlertDialog customAlertDialog = new CustomAlertDialog();
                             customAlertDialog.setMsgInfo(e.getMessage());
                             customAlertDialog.show(getFragmentManager(), "customAlertDialog");
-                        }else{
-                            Toasty.error(OrderActivity.this,getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toasty.error(OrderActivity.this, getString(R.string.netconnect_exception), Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -713,7 +707,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                 });
     }
 
-    private class MyTimer extends CountDownTimer{
+    private class MyTimer extends CountDownTimer {
 
         public MyTimer(long millisInFuture, long countDownInterval) {
             super(millisInFuture, countDownInterval);
@@ -721,7 +715,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
         @Override
         public void onTick(long millisUntilFinished) {
-            getVaildateCode.setText("剩余" + millisUntilFinished/1000 + "秒");
+            getVaildateCode.setText("剩余" + millisUntilFinished / 1000 + "秒");
         }
 
         @Override
@@ -747,7 +741,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
             int allCover[] = new int[]{R.id.button_Cover2, R.id.button_Cover3, R.id.button_Cover4, R.id.button_Cover5, R.id.button_Cover7};
 
             for (int i = 0; i < nImageCount; i++) {
-                VaildateInfo.GoodsSkuBean bean = vaildateInfo.getGoodsSku().get(i) ;
+                VaildateInfo.GoodsSkuBean bean = vaildateInfo.getGoodsSku().get(i);
                 ImageView imgView = (ImageView) findViewById(allBtn[i]);
                 TextView btnCover = (TextView) findViewById(allCover[i]);
                 if (imgView == null || btnCover == null)
@@ -803,17 +797,45 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     }
 
     @Override
-    public void onSelectBouns(String id) {
+    public void onSelectBouns() {
+        //处理优惠券
+    }
+
+    @Override
+    public DiscountReq getDiscountReq() {
+        return getDiscountReq(null,false);
+    }
+
+    @Override
+    public void onSelectedCoupon() {
 
     }
 
     @Override
-    public void exchangeCoupon(String code) {
+    public void onSelectedGift() {
 
     }
 
     @Override
-    public void onDisableAllcard() {
-
+    public synchronized double getFianlPrice() {
+        double orderPrice = Double.parseDouble(vaildateInfo.getFinalPrice());
+        double thePrice = 0.00;
+        for (Coupon coupon : couponFragment.getCoupons()){
+            if(coupon.isUsed()){
+                thePrice += coupon.getReduce_money();
+            }
+        }
+        for (Giftcard card : giftcardFragment.getCards()){
+            if(card.isUsed()){
+                thePrice += card.getMoney();
+            }
+        }
+        for (Bouns bouns : bounsFragment.getBounses()){
+            if(bouns.isUsed()){
+                thePrice += bouns.getMoney();
+                break;
+            }
+        }
+        return orderPrice - thePrice;
     }
 }
