@@ -99,7 +99,7 @@ public class CheckGiftcardReq {
 
         private String giftKey;
         private String giftCode;
-        private String checkFlag;
+        private int checkFlag;
 
         public String getGiftKey() {
             return giftKey;
@@ -117,11 +117,11 @@ public class CheckGiftcardReq {
             this.giftCode = giftCode;
         }
 
-        public String getCheckFlag() {
+        public int getCheckFlag() {
             return checkFlag;
         }
 
-        public void setCheckFlag(String checkFlag) {
+        public void setCheckFlag(int checkFlag) {
             this.checkFlag = checkFlag;
         }
     }

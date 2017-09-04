@@ -1,6 +1,7 @@
 package com.hhyg.TyClosing.ui.fragment.order;
 
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -10,10 +11,18 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.hhyg.TyClosing.R;
 import com.hhyg.TyClosing.apiService.OrderSevice;
 import com.hhyg.TyClosing.entities.CommonParam;
+import com.hhyg.TyClosing.entities.order.Bouns;
+import com.hhyg.TyClosing.entities.order.Coupon;
+import com.hhyg.TyClosing.entities.order.Giftcard;
+import com.hhyg.TyClosing.ui.adapter.order.BounsAdapter;
+import com.hhyg.TyClosing.ui.adapter.order.CouponAdapter;
 import com.hhyg.TyClosing.ui.fragment.BaseBottomDialogFragment;
+
+import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -41,6 +50,16 @@ public class CouponFragment extends BaseBottomDialogFragment {
     private Disposable disposable;
     private CommonParam commonParam;
     private OrderSevice indexSevice;
+    private ArrayList<Coupon> coupons = new ArrayList<>();
+    private CouponAdapter adapter;
+
+    public void setCoupons(ArrayList<Coupon> coupons) {
+        this.coupons = coupons;
+    }
+
+    public void addCoupon(Coupon coupon){
+        coupons.add(coupon);
+    }
 
     public void setCommonParam(CommonParam commonParam) {
         this.commonParam = commonParam;
@@ -58,6 +77,37 @@ public class CouponFragment extends BaseBottomDialogFragment {
     @Override
     public void bindView(View v) {
         unbinder = ButterKnife.bind(this, v);
+        rv.setLayoutManager(new GridLayoutManager(getActivity(),2));
+        adapter = new CouponAdapter(coupons);
+        adapter.setSpanSizeLookup(new BaseQuickAdapter.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(GridLayoutManager gridLayoutManager, int position) {
+                Coupon coupon = coupons.get(position);
+                int count = 0;
+                if(coupon != null){
+                    if(coupon.getItemType() == Coupon.COUPON){
+                        count = 1;
+                    }else{
+                        count = 2;
+                    }
+                }
+                return count;
+            }
+        });
+        adapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
+
+            }
+        });
+        rv.setAdapter(adapter);
+        if(coupons.size()!= 0){
+            rvWrap.setVisibility(View.VISIBLE);
+            emptyView.setVisibility(View.GONE);
+        }else{
+            rvWrap.setVisibility(View.GONE);
+            emptyView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -101,10 +151,16 @@ public class CouponFragment extends BaseBottomDialogFragment {
         }else{
 
         }
+    }
 
+    @OnClick(R.id.use_coupon)
+    public void onViewClicked2(){
+        dismiss();
+    }
 
+    public interface CouponOp{
 
-
+        void exchangeCoupon(final String code);
     }
 
 }

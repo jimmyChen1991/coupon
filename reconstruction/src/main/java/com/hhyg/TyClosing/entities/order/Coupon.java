@@ -1,5 +1,7 @@
 package com.hhyg.TyClosing.entities.order;
 
+import android.text.SpannableString;
+
 import com.chad.library.adapter.base.entity.MultiItemEntity;
 
 import java.util.List;
@@ -10,11 +12,11 @@ import java.util.List;
 
 public class Coupon implements MultiItemEntity{
 
-    public static int TITLE = 1;
+    public final static int TITLE = 1;
 
-    public static int COUPON = 2;
+    public final static int COUPON = 2;
 
-    public static int DISABLE = 3;
+    public final static int DISABLE = 3;
 
     private int itemType;
     private int is_new;
@@ -28,6 +30,64 @@ public class Coupon implements MultiItemEntity{
     private int isEntire;
     private String unavailableReason;
     private List<String> conflict;
+    private String timeTv;
+    private SpannableString spannableString;
+    private boolean used;
+    private boolean enable;
+    private int count;
+    private String nameTv;
+
+    public void setNameTv(String nameTv) {
+        this.nameTv = nameTv;
+    }
+
+    public String getNameTv() {
+        return nameTv;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public Coupon(int itemType) {
+        this.itemType = itemType;
+    }
+
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+
+    public boolean isEnable() {
+        return enable;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
+    }
+
+    public boolean isUsed() {
+        return used;
+    }
+
+    public void setSpannableString(SpannableString spannableString) {
+        this.spannableString = spannableString;
+    }
+
+    public SpannableString getSpannableString() {
+        return spannableString;
+    }
+
+    public void setTimeTv(String timeTv) {
+        this.timeTv = timeTv;
+    }
+
+    public String getTimeTv() {
+        return timeTv;
+    }
 
     public int getIs_new() {
         return is_new;

@@ -2,15 +2,12 @@ package com.hhyg.TyClosing.ui.fragment.order;
 
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
-import android.text.style.AbsoluteSizeSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -18,8 +15,9 @@ import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.google.gson.Gson;
 import com.hhyg.TyClosing.R;
 import com.hhyg.TyClosing.apiService.OrderSevice;
-import com.hhyg.TyClosing.config.Constants;
 import com.hhyg.TyClosing.entities.CommonParam;
+import com.hhyg.TyClosing.entities.order.CheckGiftcardReq;
+import com.hhyg.TyClosing.entities.order.CheckGiftcardRes;
 import com.hhyg.TyClosing.entities.order.Giftcard;
 import com.hhyg.TyClosing.entities.order.SearchGiftCardReq;
 import com.hhyg.TyClosing.entities.order.SearchGiftCardRes;
@@ -29,7 +27,6 @@ import com.hhyg.TyClosing.ui.adapter.order.GiftcardAdapter;
 import com.hhyg.TyClosing.ui.fragment.BaseBottomDialogFragment;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
 import com.hhyg.TyClosing.util.SpannableUtil;
-import com.hhyg.TyClosing.util.StringUtil;
 import com.hhyg.TyClosing.util.TimeUtill;
 
 import java.util.ArrayList;
@@ -95,10 +92,10 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     private Disposable disposable;
     private ArrayList<Giftcard> cards = new ArrayList<>();
     private GiftcardAdapter adapter;
-    private GiftcardListener giftcardListener;
+    private GiftcardOp giftcardOp;
 
-    public void setGiftcardListener(GiftcardListener giftcardListener) {
-        this.giftcardListener = giftcardListener;
+    public void setGiftcardListener(GiftcardOp giftcardOp) {
+        this.giftcardOp = giftcardOp;
     }
 
     public ArrayList<Giftcard> getCards() {
@@ -130,8 +127,24 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     public void bindView(View v) {
         Log.d(TAG, "create");
         unbinder = ButterKnife.bind(this, v);
-        rv.setLayoutManager(new GridLayoutManager(getActivity(),2,GridLayoutManager.VERTICAL, false));
+        GridLayoutManager layoutManager = new GridLayoutManager(getActivity(),2,GridLayoutManager.VERTICAL,false);
+        rv.setLayoutManager(layoutManager);
         adapter = new GiftcardAdapter(getActivity(),cards);
+        adapter.setSpanSizeLookup(new BaseQuickAdapter.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(GridLayoutManager gridLayoutManager, int position) {
+                Giftcard giftcard = cards.get(position);
+                int count = 0;
+                if(giftcard != null){
+                    if(giftcard.getItemType() == Giftcard.CARD){
+                        count = 1;
+                    }else{
+                        count = 2;
+                    }
+                }
+                return count;
+            }
+        });
         adapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
@@ -139,7 +152,7 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                 if(card.getItemType() != Giftcard.CARD){
 
                 }else{
-
+                   checkTheCard(card);
                 }
             }
         });
@@ -151,6 +164,82 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
             rvWrap.setVisibility(View.GONE);
             emptyView.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void checkTheCard(final Giftcard giftcard) {
+        Observable.just(giftcard)
+                .map(new Function<Giftcard, CheckGiftcardReq>() {
+                    @Override
+                    public CheckGiftcardReq apply(@NonNull Giftcard giftcard) throws Exception {
+                        CheckGiftcardReq req = new CheckGiftcardReq();
+                        CheckGiftcardReq.DataBean data = new CheckGiftcardReq.DataBean();
+                        req.setImei(commonParam.getImei());
+                        req.setShopid(commonParam.getShopId());
+                        req.setChannel(commonParam.getChannelId());
+                        req.setPlatformId(commonParam.getPlatformId());
+                        req.setSaleId(ClosingRefInfoMgr.getInstance().getSalerId());
+                        data.setCheckFlag(giftcard.isUsed() ? 0 : 1);
+                        data.setGiftCode(giftcard.getBarcode());
+                        data.setGiftKey(token);
+                        req.setData(data);
+                        return req;
+                    }
+                })
+                .flatMap(new Function<CheckGiftcardReq, ObservableSource<CheckGiftcardRes>>() {
+                    @Override
+                    public ObservableSource<CheckGiftcardRes> apply(@NonNull CheckGiftcardReq checkGiftcardReq) throws Exception {
+                        Gson gson = new Gson();
+                        return indexSevice.setCardStatus(gson.toJson(checkGiftcardReq));
+                    }
+                })
+                .doOnNext(new Consumer<CheckGiftcardRes>() {
+                    @Override
+                    public void accept(@NonNull CheckGiftcardRes checkGiftcardRes) throws Exception {
+                        if(checkGiftcardRes.getErrcode() != 1){
+                            throw new ServiceMsgException(checkGiftcardRes.getMsg());
+                        }
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doFinally(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        ProgressDialogUtil.hide();
+                    }
+                })
+                .subscribe(new Observer<CheckGiftcardRes>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        disposable = d;
+                        ProgressDialogUtil.show(getActivity());
+                    }
+
+                    @Override
+                    public void onNext(@NonNull CheckGiftcardRes checkGiftcardRes) {
+                        Toasty.success(getActivity(),checkGiftcardRes.getMsg(),Toast.LENGTH_SHORT).show();
+                        giftcard.setUsed(checkGiftcardRes.getData().getCheckFlag() == 1 );
+                        adapter.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        Log.d(TAG, e.toString());
+                        if(e instanceof ServiceMsgException){
+                            Toasty.error(getActivity(),e.getMessage(),Toast.LENGTH_SHORT).show();
+                        }else {
+                            Toasty.error(getActivity(),getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+
+
     }
 
     @Override
@@ -172,6 +261,8 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     public void onDestroyView() {
         super.onDestroyView();
         Log.d(TAG, "close");
+        giftcardId.getText().clear();
+        giftPwd.getText().clear();
         unbinder.unbind();
         if(disposable != null && !disposable.isDisposed()){
             disposable.dispose();
@@ -240,6 +331,7 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                             card.setMoney(bean.getMoney());
                             card.setTime_begin(TimeUtill.TimeStamp2Date(bean.getTime_begin()));
                             card.setTime_end(TimeUtill.TimeStamp2Date(bean.getTime_end()));
+                            card.setTimeTv(TimeUtill.TimeStamp2Date(bean.getTime_begin()) +" ~ " + TimeUtill.TimeStamp2Date(bean.getTime_end()));
                             card.setBottemContent(TimeUtill.TimeStamp2Date(bean.getTime_begin()) +" ~ " + TimeUtill.TimeStamp2Date(bean.getTime_end()));
                             return card;
                         }
@@ -247,8 +339,13 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                     .doOnNext(new Consumer<Giftcard>() {
                         @Override
                         public void accept(@NonNull Giftcard giftcard) throws Exception {
-                            cards.add(cards.size() - 1,giftcard);
-                            cards.add(giftcard);
+                            if(cards.size() == 0){
+                                cards.add(giftcard);
+                                Giftcard disableCard = new Giftcard(Giftcard.DISABLE);
+                                cards.add(disableCard);
+                            }else{
+                                cards.add(cards.size() - 1,giftcard);
+                            }
                         }
                     })
                     .subscribeOn(Schedulers.io())
@@ -293,11 +390,10 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
 
     @OnClick(R.id.use_card)
     public void onViewClicked2(){
-
-
+        dismiss();
     }
 
-    public interface GiftcardListener{
+    public interface GiftcardOp{
         void onDisableAllcard();
     }
 }

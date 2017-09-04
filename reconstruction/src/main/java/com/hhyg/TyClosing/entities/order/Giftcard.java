@@ -1,7 +1,6 @@
 package com.hhyg.TyClosing.entities.order;
 
 import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 
 import com.chad.library.adapter.base.entity.MultiItemEntity;
 
@@ -24,6 +23,24 @@ public class Giftcard implements MultiItemEntity {
     private int itemType;
     private String BottemContent;
     private SpannableString spannableString;
+    private String timeTv;
+    private boolean used;
+
+    public void setTimeTv(String timeTv) {
+        this.timeTv = timeTv;
+    }
+
+    public String getTimeTv() {
+        return timeTv;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
+    }
+
+    public boolean isUsed() {
+        return used;
+    }
 
     public void setSpannableString(SpannableString spannableString) {
         this.spannableString = spannableString;

@@ -27,6 +27,8 @@ import com.hhyg.TyClosing.di.componet.DaggerOrderComponent;
 import com.hhyg.TyClosing.di.module.CommonNetParamModule;
 import com.hhyg.TyClosing.di.module.OrderModule;
 import com.hhyg.TyClosing.entities.CommonParam;
+import com.hhyg.TyClosing.entities.order.Bouns;
+import com.hhyg.TyClosing.entities.order.Coupon;
 import com.hhyg.TyClosing.entities.order.DiscountReq;
 import com.hhyg.TyClosing.entities.order.DiscountRes;
 import com.hhyg.TyClosing.entities.order.HasDiscountReq;
@@ -52,6 +54,8 @@ import com.hhyg.TyClosing.ui.fragment.order.BounsFragment;
 import com.hhyg.TyClosing.ui.fragment.order.CouponFragment;
 import com.hhyg.TyClosing.ui.fragment.order.GiftcardFragment;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
+import com.hhyg.TyClosing.util.SpannableUtil;
+import com.hhyg.TyClosing.util.TimeUtill;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -77,7 +81,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public class OrderActivity extends AppCompatActivity implements OrderPrice{
+public class OrderActivity extends AppCompatActivity implements OrderPrice,CouponFragment.CouponOp,BounsFragment.BounsOp,GiftcardFragment.GiftcardOp{
 
     private static final String TAG = "OrderActivity";
 
@@ -96,7 +100,10 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice{
     OrderSevice fastIndexOrderSevice;
     @Inject
     @Named("slowMsService")
-    OrderSevice msOrderSevice;
+    OrderSevice slowMsOrderSevice;
+    @Inject
+    @Named("fastMsService")
+    OrderSevice fastMsOrderSevice;
     @Inject
     CompositeDisposable disposables;
     @Inject
@@ -448,6 +455,90 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice{
                             }
                         }
                     })
+                    .doOnNext(new Consumer<DiscountRes>() {
+                        @Override
+                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                            if(discountRes.getData().getBonus() != null && discountRes.getData().getBonus().size() != 0){
+                                for(DiscountRes.DataBean.BonusBean bean : discountRes.getData().getBonus()){
+                                    Bouns bouns = new Bouns(Bouns.BOUNS);
+                                    bouns.setSpannableString(SpannableUtil.discountSpan(bean.getMoney()));
+                                    bouns.setMoney(bean.getMoney());
+                                    bouns.setBonus_id(bean.getBonus_id());
+                                    bouns.setEffective_date(bean.getEffective_date());
+                                    bouns.setTitle(bean.getTitle());
+                                    bouns.setIntro(bean.getIntro());
+                                    bounsFragment.addBouns(bouns);
+                                }
+
+                            }
+                        }
+                    })
+                    .doOnNext(new Consumer<DiscountRes>() {
+                        @Override
+                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                            final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
+                            if(couponsBean != null && couponsBean.getUSABLE() != null && couponsBean.getUSABLE().size() != 0){
+                                Coupon title = new Coupon(Coupon.TITLE);
+                                title.setEnable(true);
+                                title.setCount(couponsBean.getUSABLE().size());
+                                couponFragment.addCoupon(title);
+                                for (int index = 0;index < couponsBean.getUSABLE().size() ;index ++){
+                                    DiscountRes.DataBean.CouponsBean.USABLEBean res = couponsBean.getUSABLE().get(index);
+                                    Coupon coupon = new Coupon(Coupon.COUPON);
+                                    coupon.setCode_str(res.getCode_str());
+                                    coupon.setConflict(res.getConflict());
+                                    coupon.setDiscountDesc(res.getDiscountDesc());
+                                    coupon.setName(res.getName());
+                                    coupon.setIs_new(res.getIs_new());
+                                    coupon.setIsEntire(res.getIsEntire());
+                                    coupon.setEnd_time(res.getEnd_time());
+                                    coupon.setStart_time(res.getStart_time());
+                                    coupon.setReached_money(res.getReached_money());
+                                    coupon.setReduce_money(res.getReduce_money());
+                                    coupon.setTimeTv(TimeUtill.TimeStamp2Date(res.getStart_time()) +" ~ " + TimeUtill.TimeStamp2Date(res.getEnd_time()));
+                                    coupon.setSpannableString(SpannableUtil.discountSpan(res.getReduce_money()));
+                                    coupon.setEnable(true);
+                                    coupon.setNameTv("【" + res.getName() + "】" + res.getDiscountDesc());
+                                    couponFragment.addCoupon(coupon);
+                                }
+                                Coupon disable = new Coupon(Coupon.DISABLE);
+                                disable.setEnable(true);
+                                couponFragment.addCoupon(disable);
+                            }
+
+                        }
+                    })
+                    .doOnNext(new Consumer<DiscountRes>() {
+                        @Override
+                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                            final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
+                            if(couponsBean != null && couponsBean.getUNUSABLE() != null && couponsBean.getUNUSABLE().size() != 0){
+                                Coupon title = new Coupon(Coupon.TITLE);
+                                title.setEnable(false);
+                                title.setCount(couponsBean.getUNUSABLE().size());
+                                couponFragment.addCoupon(title);
+                                for (int index = 0;index < couponsBean.getUNUSABLE().size() ;index ++){
+                                    DiscountRes.DataBean.CouponsBean.UNUSABLEBean res = couponsBean.getUNUSABLE().get(index);
+                                    Coupon coupon = new Coupon(Coupon.COUPON);
+                                    coupon.setCode_str(res.getCode_str());
+                                    coupon.setConflict(res.getConflict());
+                                    coupon.setDiscountDesc(res.getDiscountDesc());
+                                    coupon.setName(res.getName());
+                                    coupon.setIs_new(res.getIs_new());
+                                    coupon.setIsEntire(res.getIsEntire());
+                                    coupon.setEnd_time(res.getEnd_time());
+                                    coupon.setStart_time(res.getStart_time());
+                                    coupon.setReached_money(res.getReached_money());
+                                    coupon.setReduce_money(res.getReduce_money());
+                                    coupon.setTimeTv(TimeUtill.TimeStamp2Date(res.getStart_time()) +" ~ " + TimeUtill.TimeStamp2Date(res.getEnd_time()));
+                                    coupon.setSpannableString(SpannableUtil.discountSpan(res.getReduce_money()));
+                                    coupon.setEnable(false);
+                                    coupon.setNameTv("【" + res.getName() + "】" + res.getDiscountDesc());
+                                    couponFragment.addCoupon(coupon);
+                                }
+                            }
+                        }
+                    })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .doFinally(new Action() {
@@ -465,16 +556,17 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice{
 
                         @Override
                         public void onNext(@NonNull DiscountRes discountRes) {
-
+                            Toasty.success(OrderActivity.this,discountRes.getMsg(),Toast.LENGTH_SHORT).show();
                         }
 
                         @Override
                         public void onError(@NonNull Throwable e) {
                             if(e instanceof ServiceMsgException){
                                 Toasty.error(OrderActivity.this,e.getMessage(),Toast.LENGTH_SHORT).show();
-                            }else{
+                            }else {
                                 Toasty.error(OrderActivity.this,getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
                             }
+                            Log.d(TAG, e.toString());
 
                         }
 
@@ -561,7 +653,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice{
                 .flatMap(new Function<OwnpayReq, ObservableSource<OwnpayRes>>() {
                     @Override
                     public ObservableSource<OwnpayRes> apply(@NonNull OwnpayReq ownpayReq) throws Exception {
-                        return msOrderSevice.ownpay(gson.toJson(ownpayReq));
+                        return slowMsOrderSevice.ownpay(gson.toJson(ownpayReq));
                     }
                 })
                 .doOnNext(new Consumer<OwnpayRes>() {
@@ -708,5 +800,20 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice{
         Spannable word = new SpannableString(str);
         word.setSpan(new AbsoluteSizeSpan(25), 0, 5, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
         bottomPrice.setText(word);
+    }
+
+    @Override
+    public void onSelectBouns(String id) {
+
+    }
+
+    @Override
+    public void exchangeCoupon(String code) {
+
+    }
+
+    @Override
+    public void onDisableAllcard() {
+
     }
 }

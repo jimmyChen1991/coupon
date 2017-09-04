@@ -1,5 +1,7 @@
 package com.hhyg.TyClosing.entities.order;
 
+import android.text.SpannableString;
+
 import com.chad.library.adapter.base.entity.MultiItemEntity;
 
 /**
@@ -8,9 +10,9 @@ import com.chad.library.adapter.base.entity.MultiItemEntity;
 
 public class Bouns implements MultiItemEntity {
 
-    public static int Bouns = 1;
+    public final static int BOUNS = 1;
 
-    public static int DISABLE = 2;
+    public final static int DISABLE = 2;
     private int itemType;
 
     private String bonus_id;
@@ -18,6 +20,24 @@ public class Bouns implements MultiItemEntity {
     private String title;
     private String intro;
     private String effective_date;
+    private boolean used;
+    private SpannableString spannableString;
+
+    public void setSpannableString(SpannableString spannableString) {
+        this.spannableString = spannableString;
+    }
+
+    public SpannableString getSpannableString() {
+        return spannableString;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
+    }
+
+    public boolean isUsed() {
+        return used;
+    }
 
     public Bouns(int itemType) {
         this.itemType = itemType;

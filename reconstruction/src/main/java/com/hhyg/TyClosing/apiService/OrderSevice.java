@@ -2,6 +2,7 @@ package com.hhyg.TyClosing.apiService;
 
 import com.hhyg.TyClosing.entities.order.CheckGiftcardRes;
 import com.hhyg.TyClosing.entities.order.DiscountRes;
+import com.hhyg.TyClosing.entities.order.ExchangecouponRes;
 import com.hhyg.TyClosing.entities.order.HasDiscountRes;
 import com.hhyg.TyClosing.entities.order.OwnpayRes;
 import com.hhyg.TyClosing.entities.order.SearchGiftCardRes;
@@ -46,5 +47,9 @@ public interface OrderSevice {
     @POST("index.php?r=giftcard/checkin")
     @FormUrlEncoded
     Observable<CheckGiftcardRes> setCardStatus(@Field("parameter") String parameter);
+
+    @POST("index.php?r=couponsnew/exchangecoupons")
+    @FormUrlEncoded
+    Observable<ExchangecouponRes> exchangeCoupon(@Field("parameter") String parameter);
 
 }

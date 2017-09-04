@@ -34,6 +34,15 @@ public class GiftcardAdapter extends BaseMultiItemQuickAdapter<Giftcard,BaseView
                 helper.setText(R.id.cardId,item.getBarcode())
                         .setText(R.id.bottom_tv,item.getBottemContent())
                         .setText(R.id.count,item.getSpannableString());
+                if(item.isUsed()){
+                    helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_giftcard);
+                    helper.getView(R.id.countWrap).setBackgroundResource(R.color.orange);
+                    helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.giftcard_checked);
+                }else{
+                    helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_disable_alldiscount);
+                    helper.getView(R.id.countWrap).setBackgroundResource(R.color.price);
+                    helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable_ordercut);
+                }
                 break;
             case Giftcard.DISABLE:
                 helper.setText(R.id.title,"不使用礼品卡");
