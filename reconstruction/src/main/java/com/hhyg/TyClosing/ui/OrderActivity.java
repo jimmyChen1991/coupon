@@ -1,14 +1,18 @@
 package com.hhyg.TyClosing.ui;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -22,6 +26,7 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.hhyg.TyClosing.R;
 import com.hhyg.TyClosing.apiService.OrderSevice;
+import com.hhyg.TyClosing.config.Constants;
 import com.hhyg.TyClosing.di.componet.DaggerCommonNetParamComponent;
 import com.hhyg.TyClosing.di.componet.DaggerOrderComponent;
 import com.hhyg.TyClosing.di.module.CommonNetParamModule;
@@ -58,7 +63,6 @@ import com.hhyg.TyClosing.ui.fragment.order.GiftcardFragment;
 import com.hhyg.TyClosing.util.CouponUtil;
 import com.hhyg.TyClosing.util.ProgressDialogUtil;
 import com.hhyg.TyClosing.util.SpannableUtil;
-import com.hhyg.TyClosing.util.TimeUtill;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -451,6 +455,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         @Override
                         public void accept(@NonNull DiscountRes discountRes) throws Exception {
                             if (discountRes.getData().getBonus() != null && discountRes.getData().getBonus().size() != 0) {
+                                double thePrice = getFianlPrice();
                                 for (DiscountRes.DataBean.BonusBean bean : discountRes.getData().getBonus()) {
                                     Bouns bouns = new Bouns(Bouns.BOUNS);
                                     bouns.setSpannableString(SpannableUtil.discountSpan(bean.getMoney()));
@@ -459,6 +464,12 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                                     bouns.setEffective_date(bean.getEffective_date());
                                     bouns.setTitle(bean.getTitle());
                                     bouns.setIntro(bean.getIntro());
+                                    bouns.setUnavailableReason("面额大于实付金额");
+                                    if(thePrice <= bouns.getMoney()){
+                                        bouns.setAvailable(false);
+                                    }else {
+                                        bouns.setAvailable(true);
+                                    }
                                     bounsFragment.addBouns(bouns);
                                 }
 
@@ -474,9 +485,17 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                                 title.setEnable(true);
                                 title.setCount(couponsBean.getUSABLE().size());
                                 couponFragment.addCoupon(title);
+                                double thePrice = getFianlPrice();
                                 for (int index = 0; index < couponsBean.getUSABLE().size(); index++) {
                                     CouponBean res = couponsBean.getUSABLE().get(index);
                                     Coupon coupon = new Coupon(Coupon.COUPON);
+                                    if(thePrice <= coupon.getReduce_money()){
+                                        coupon.setAvailable(false);
+                                        coupon.setUnavailableReason("面额大于实付金额");
+                                    }else {
+                                        coupon.setAvailable(true);
+                                    }
+                                    coupon.setEnable(true);
                                     CouponUtil.initCoupon(res, coupon);
                                     couponFragment.addCoupon(coupon);
                                 }
@@ -523,6 +542,8 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         @Override
                         public void onNext(@NonNull DiscountRes discountRes) {
                             Toasty.success(OrderActivity.this, discountRes.getMsg(), Toast.LENGTH_SHORT).show();
+                            showSuccessUI();
+                            freshSelectedText();
                         }
 
                         @Override
@@ -553,10 +574,10 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
         req.setImei(commonParam.getImei());
         req.setPlatformId(commonParam.getPlatformId());
         req.setShopid(commonParam.getShopId());
-//        data.setNeedcheckcode(needCheckCode ? 1 : 0);
-        data.setNeedcheckcode(0);
+        data.setNeedcheckcode(needCheckCode ? 1 : 0);
+//        data.setNeedcheckcode(0);
         data.setCode(input);
-        data.setFinal_total_price(getFianlPrice());
+        data.setFinal_total_price(vaildateInfo.getFinalPrice());
         data.setDeliverplace(String.valueOf(ClosingRefInfoMgr.getInstance().getCurPickupId()));
         data.setMobile_phone(vaildateInfo.getPhone());
         data.setToken(vaildateInfo.getToken());
@@ -621,14 +642,31 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         dataBean.setFlightDate(vaildateInfo.getUserInfo().getFlightDate());
                         dataBean.setFlightNum(vaildateInfo.getUserInfo().getFlightNum());
                         dataBean.setDeliverPlace(ClosingRefInfoMgr.getInstance().getCurPickupId());
-//                        dataBean.setDeliverTime(vaildateInfo.getDeliverTime());
+                        dataBean.setDeliverTime(vaildateInfo.getDeliverTime());
                         dataBean.setIdCard(vaildateInfo.getUserInfo().getIdCard());
-                        dataBean.setDeliverTime("2017-09-03 23:37");
                         dataBean.setPhone(vaildateInfo.getUserInfo().getPhone());
                         dataBean.setUserName(vaildateInfo.getUserInfo().getUserName());
                         dataBean.setSubmitTime(new Date().getTime());
                         dataBean.setToken(vaildateInfo.getToken());
-                        dataBean.setCouponCode("sdazzx");
+                    }
+                })
+                .doOnNext(new Consumer<OwnpayReq.DataBean>() {
+                    @Override
+                    public void accept(@NonNull OwnpayReq.DataBean dataBean) throws Exception {
+                        StringBuilder sb = new StringBuilder();
+                        for (Coupon coupon : couponFragment.getCoupons()){
+                            if(coupon.isEnable() && coupon.isUsed()){
+                                sb.append(coupon.getCode_str());
+                                sb.append(",");
+                            }
+                        }
+                        dataBean.setCouponCode(sb.toString());
+                    }
+                })
+                .doOnNext(new Consumer<OwnpayReq.DataBean>() {
+                    @Override
+                    public void accept(@NonNull OwnpayReq.DataBean dataBean) throws Exception {
+                        dataBean.setGiftcardKey(giftcardFragment.getToken());
                     }
                 })
                 .map(new Function<OwnpayReq.DataBean, OwnpayReq>() {
@@ -726,6 +764,20 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
         }
     }
 
+    private void showSuccessUI() {
+        View t = findViewById(R.id.button_success_icon);
+        t.setVisibility(View.VISIBLE);
+
+        t = findViewById(R.id.button_success_txt);
+        t.setVisibility(View.VISIBLE);
+
+        t = findViewById(R.id.toolbar119);
+        t.setVisibility(View.GONE);
+
+        t = findViewById(R.id.button_code_check);
+        t.setVisibility(View.GONE);
+    }
+
     private void setGoodsImages() {
         final int nCount = vaildateInfo.getGoodsSku().size();
         int nImageCount = 0;
@@ -775,30 +827,170 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
         everyFullActive.setText("每满减优惠" + "\n" + strMoney + vaildateInfo.getEveryFullActive());
 
-        str = getResources().getString(R.string.server_settle_moeny1) + "\n" + strMoney;
+        double couponPrice = 0.00;
+        for (Coupon coupon : couponFragment.getCoupons()){
+            if(coupon.isEnable() && coupon.isUsed()){
+                couponPrice +=  coupon.getReduce_money();
+            }
+        }
+        str = getResources().getString(R.string.server_settle_moeny1) + "\n" + String.format("%.2f",couponPrice);
         counpon.setText(str);
 
-        str = getResources().getString(R.string.server_settle_card) + "\n" + strMoney;
+        double giftcardPrice = 0.00;
+        for (Giftcard card : giftcardFragment.getCards()){
+            if(card.isUsed() && card.getItemType() == Giftcard.CARD){
+                giftcardPrice += card.getMoney();
+            }
+        }
+        str = getResources().getString(R.string.server_settle_card) + "\n" + strMoney + String.format("%.2f",giftcardPrice);
         giftCard.setText(str);
 
-        str = getResources().getString(R.string.server_settle_hongbao) + "\n" + strMoney;
+        double bounsPrice = 0.00;
+        for (Bouns bouns : bounsFragment.getBounses()){
+            if(bouns.isUsed()){
+                bounsPrice += bouns.getMoney();
+            }
+        }
+        str = getResources().getString(R.string.server_settle_hongbao) + "\n" + strMoney + String.format("%.2f",bounsPrice);
         hongbao.setText(str);
 
         str = getResources().getString(R.string.server_settle_money_rate) + "\n" + strMoney + vaildateInfo.getMoney_rate();
         tax.setText(str);
 
-        str = getResources().getString(R.string.server_settle_finalPrice) + "\n" + strMoney;
+        double thePrice = getFianlPrice();
+        str = getResources().getString(R.string.server_settle_finalPrice) + "\n" + strMoney + String.format("%.2f",thePrice);
         finalPrice.setText(str);
 
-        str = getResources().getString(R.string.server_settle_finalPrice) + "  " + getResources().getString(R.string.server_settle_moeny);
+        str = getResources().getString(R.string.server_settle_finalPrice) + "  " + getResources().getString(R.string.server_settle_moeny) + String.format("%.2f",thePrice);
         Spannable word = new SpannableString(str);
         word.setSpan(new AbsoluteSizeSpan(25), 0, 5, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
         bottomPrice.setText(word);
     }
 
+    @android.support.annotation.NonNull
+    private SpannableString getSpannableString(int avaliableCount,String name) {
+        String countStr = String.valueOf(avaliableCount);
+        String warnning = "有" + countStr + "可用的" + name;
+        SpannableString spannableString = new SpannableString(warnning);
+        spannableString.setSpan(new ForegroundColorSpan(Color.parseColor("#C38C56")),1,1 + countStr.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        return spannableString;
+    }
+
+    @android.support.annotation.NonNull
+    private SpannableStringBuilder getSpannableStringBuilder(int couponPrice, int usedCount) {
+        SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
+        String countStr = String.valueOf(usedCount);
+        String warnning = "已选" + countStr + "张 :-" ;
+        String priceStr = String.valueOf(couponPrice);
+        String warnning2 = Constants.PRICE_TITLE + priceStr;
+        SpannableString spannableString = new SpannableString(warnning);
+        spannableString.setSpan(new ForegroundColorSpan(Color.parseColor("#C38C56")),2,2 + countStr.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        spannableStringBuilder.append(spannableString);
+        SpannableString spannableString2 = new SpannableString(warnning2);
+        spannableString2.setSpan(new ForegroundColorSpan(Color.parseColor("#C38C56")),1,1 + priceStr.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        spannableStringBuilder.append(spannableString2);
+        return spannableStringBuilder;
+    }
+    private void freshCouponSelectedText(){
+        double couponPrice = 0.00;
+        boolean used = false;
+        boolean avaliable = false;
+        int usedCount = 0;
+        int avaliableCount = 0;
+        for (Coupon coupon : couponFragment.getCoupons()){
+            if(coupon.isEnable() && coupon.isUsed() && coupon.getItemType() == Coupon.COUPON){
+                used = true;
+                couponPrice += coupon.getReduce_money();
+                usedCount ++;
+            }
+            if(coupon.isEnable() && coupon.isAvailable() && coupon.getItemType() == Coupon.COUPON){
+                avaliable = true;
+                avaliableCount ++;
+            }
+        }
+        if(used){
+            SpannableStringBuilder spannableStringBuilder = getSpannableStringBuilder((int) couponPrice, usedCount);
+            couponWarnning.setText(spannableStringBuilder);
+        }else if(avaliable){
+            SpannableString spannableString = getSpannableString(avaliableCount,"优惠券");
+            couponWarnning.setText(spannableString);
+        }else{
+            couponWarnning.setText(getString(R.string.exchangedcoupon));
+        }
+    }
+
+    private void freshGiftcardSelectedText(){
+        double cardPrice = 0.00;
+        boolean used = false;
+        boolean avaliable = false;
+        int usedCount = 0;
+        int avaliableCount = 0;
+        for (Giftcard card : giftcardFragment.getCards()){
+            if(card.isUsed() && card.getItemType() == Giftcard.CARD){
+                used = true;
+                cardPrice += card.getMoney();
+                usedCount ++;
+            }
+            if(card.isAvailable()&& card.getItemType() == Giftcard.CARD){
+                avaliable = true;
+                avaliableCount ++;
+            }
+        }
+        if(used){
+            SpannableStringBuilder spannableStringBuilder = getSpannableStringBuilder((int) cardPrice, usedCount);
+            giftcardWarnning.setText(spannableStringBuilder);
+        }else if(avaliable){
+            SpannableString spannableString = getSpannableString(avaliableCount,"礼品卡");
+            giftcardWarnning.setText(spannableString);
+        }else{
+            giftcardWarnning.setText(getString(R.string.use_giftcard));
+        }
+    }
+
+    private void freshBounsSelectedText(){
+        double bounsPrice = 0.00;
+        boolean used = false;
+        boolean avaliable = false;
+        int usedCount = 0;
+        int avaliableCount = 0;
+        for (Bouns bouns : bounsFragment.getBounses()){
+            if(bouns.isUsed() && bouns.getItemType() == Bouns.BOUNS){
+                used = true;
+                bounsPrice += bouns.getMoney();
+                usedCount ++;
+            }
+            if(bouns.isAvailable() && bouns.getItemType() == Bouns.BOUNS){
+                avaliable = true;
+                avaliableCount ++;
+            }
+        }
+        if(used){
+            SpannableStringBuilder spannableStringBuilder = getSpannableStringBuilder((int) bounsPrice, usedCount);
+            bounsWarnning.setText(spannableStringBuilder);
+        }else if(avaliable){
+            SpannableString spannableString = getSpannableString(avaliableCount,"红包");
+            bounsWarnning.setText(spannableString);
+        }else{
+            bounsWarnning.setText(getString(R.string.no_bouns));
+        }
+    }
+    private void freshSelectedText(){
+        freshBounsSelectedText();
+        freshCouponSelectedText();
+        freshGiftcardSelectedText();
+    }
+
     @Override
     public void onSelectBouns() {
-        //处理优惠券
+        setMoney();
+        couponFragment.onSelectedItemChange();
+        giftcardFragment.onSelectedItemChange();
+        freshSelectedText();
+    }
+
+    @Override
+    public void calaAvaliable() {
+        freshSelectedText();
     }
 
     @Override
@@ -808,12 +1000,17 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
     @Override
     public void onSelectedCoupon() {
-
+        setMoney();
+        giftcardFragment.onSelectedItemChange();
+        bounsFragment.onSelectedItemChange();
     }
 
     @Override
     public void onSelectedGift() {
-
+        setMoney();
+        couponFragment.onSelectedItemChange();
+        bounsFragment.onSelectedItemChange();
+        freshSelectedText();
     }
 
     @Override
@@ -826,7 +1023,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
             }
         }
         for (Giftcard card : giftcardFragment.getCards()){
-            if(card.isUsed()){
+            if(card.isUsed() && card.getItemType() == Giftcard.CARD){
                 thePrice += card.getMoney();
             }
         }
@@ -838,4 +1035,5 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
         }
         return orderPrice - thePrice;
     }
+
 }

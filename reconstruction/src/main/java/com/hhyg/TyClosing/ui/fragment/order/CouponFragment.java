@@ -111,13 +111,13 @@ public class CouponFragment extends BaseBottomDialogFragment {
         double thePrice = orderPrice.getFianlPrice();
         for (Coupon coupon : coupons){
             if(coupon.isEnable()){
-                if(coupon.getReduce_money() <= thePrice){
+                if(!coupon.isUsed() && thePrice <= coupon.getReduce_money()){
                     coupon.setAvailable(false);
+                    coupon.setUnavailableReason("面额大于实付金额");
                 }else{
                     coupon.setAvailable(true);
                 }
             }
-
         }
     }
 
@@ -155,32 +155,86 @@ public class CouponFragment extends BaseBottomDialogFragment {
                     if(coupon.isEnable() && coupon.isAvailable()){
                         if(coupon.isUsed()){
                             coupon.setUsed(false);
-                        }else {
-                            coupon.setUsed(true);
-                        }
-                        if(coupon.getIsEntire() == 1){
-                            for (Coupon bean : coupons){
-                                bean.setAvailable(false);
-                            }
-                            coupon.setAvailable(true);
-                        }else{
-                            if(coupon.getConflict() != null && coupon.getConflict().size() != 1){
-                                for (String confict : coupon.getConflict()){
-                                    for (Coupon bean : coupons){
-                                        
+                            onSelectedItemChange();
+                            couponOp.onSelectedCoupon();
+                            if(coupon.getIsEntire() == 1){
+                                for (Coupon bean : coupons){
+                                    bean.setAvailable(true);
+                                }
+                            }else{
+                                if(coupon.getConflict() != null && coupon.getConflict().size() != 0){
+                                    for (String conflict : coupon.getConflict()){
+                                        if(!conflict.equals(coupon.getCode_str())){
+                                            boolean enable = true;
+                                            for (Coupon bean : coupons){
+                                                if(bean.isEnable() && bean.isUsed() && bean.getConflict() != null && bean.getConflict().size() != 0){
+                                                    for (String tmpConflict : bean.getConflict()){
+                                                        if(!tmpConflict.equals(bean.getCode_str()) && tmpConflict.equals(conflict)){
+                                                            enable = false;
+                                                            break;
+                                                        }
+
+
+                                                    }
+
+                                                }
+
+
+                                            }
+                                            if(enable){
+                                                for (Coupon bean : coupons){
+                                                    if(bean.getCode_str().equals(conflict) && bean.isEnable()){
+                                                        bean.setAvailable(true);
+                                                        break;
+                                                    }
+
+                                                }
+                                            }
+
+                                        }
+
                                     }
 
 
+
                                 }
+
                             }
+                        }else {
+                            coupon.setUsed(true);
+                            onSelectedItemChange();
+                            couponOp.onSelectedCoupon();
+                            if(coupon.getIsEntire() == 1){
+                                for (Coupon bean : coupons){
+                                    if(bean.isEnable()){
+                                        bean.setAvailable(false);
+                                        bean.setUnavailableReason("与已选优惠券商品范围重叠");
+                                    }
+                                }
+                                coupon.setAvailable(true);
+                            }else{
+                                if(coupon.getConflict() != null && coupon.getConflict().size() != 0){
+                                    for (String conflict : coupon.getConflict()){
+                                        if(!conflict.equals(coupon.getCode_str())){
+                                            for (Coupon bean : coupons){
+                                                if(bean.getCode_str().equals(conflict) && bean.isEnable()){
+                                                    bean.setAvailable(false);
+                                                    bean.setUnavailableReason("与已选优惠券商品范围重叠");
+                                                }
+
+                                            }
+
+                                        }
+                                    }
+                                }
+
+                            }
+
                         }
-                        onSelectedItemChange();
-                        couponOp.onSelectedCoupon();
-
-
                     }
                 }
-
+                adapter.notifyDataSetChanged();
+                couponOp.calaAvaliable();
             }
         });
         rv.setAdapter(adapter);
@@ -373,6 +427,8 @@ public class CouponFragment extends BaseBottomDialogFragment {
         void onSelectedCoupon();
 
         DiscountReq getDiscountReq();
+
+        void calaAvaliable();
     }
 
 }

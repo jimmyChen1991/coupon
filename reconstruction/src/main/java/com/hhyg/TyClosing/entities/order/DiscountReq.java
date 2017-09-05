@@ -83,7 +83,7 @@ public class DiscountReq {
          */
 
         private String deliverplace;
-        private double final_total_price;
+        private String final_total_price;
         private String mobile_phone;
         private String code;
         private String token;
@@ -106,11 +106,11 @@ public class DiscountReq {
             this.deliverplace = deliverplace;
         }
 
-        public double getFinal_total_price() {
+        public String getFinal_total_price() {
             return final_total_price;
         }
 
-        public void setFinal_total_price(double final_total_price) {
+        public void setFinal_total_price(String final_total_price) {
             this.final_total_price = final_total_price;
         }
 

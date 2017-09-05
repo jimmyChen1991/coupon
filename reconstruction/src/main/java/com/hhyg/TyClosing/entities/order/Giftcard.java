@@ -26,6 +26,15 @@ public class Giftcard implements MultiItemEntity {
     private String timeTv;
     private boolean used;
     private boolean available;
+    private String unavailableReason;
+
+    public void setUnavailableReason(String unavailableReason) {
+        this.unavailableReason = unavailableReason;
+    }
+
+    public String getUnavailableReason() {
+        return unavailableReason;
+    }
 
     public void setAvailable(boolean available) {
         this.available = available;

@@ -31,8 +31,7 @@ public class BounsAdapter extends BaseMultiItemQuickAdapter<Bouns,BaseViewHolder
         switch (helper.getItemViewType()){
             case Bouns.BOUNS:
                 helper.setText(R.id.name,item.getTitle())
-                        .setText(R.id.count,item.getSpannableString())
-                        .setText(R.id.bottom_tv,item.getEffective_date());
+                        .setText(R.id.count,item.getSpannableString());
                 if(item.isUsed()){
                     helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_bouns);
                     helper.getView(R.id.countWrap).setBackgroundResource(R.color.bouns);
@@ -43,6 +42,11 @@ public class BounsAdapter extends BaseMultiItemQuickAdapter<Bouns,BaseViewHolder
                     helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable_ordercut);
                 }
 
+                if(item.isAvailable()){
+                    helper.setText(R.id.bottom_tv,item.getEffective_date());
+                }else{
+                    helper.setText(R.id.bottom_tv,item.getUnavailableReason());
+                }
                 break;
             case Bouns.DISABLE:
                 helper.setText(R.id.title,"不使用红包");

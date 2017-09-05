@@ -1,10 +1,15 @@
 package com.hhyg.TyClosing.util;
 
+import android.graphics.Color;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 
 import com.hhyg.TyClosing.config.Constants;
+import com.hhyg.TyClosing.entities.order.Coupon;
 
 /**
  * Created by chenqiyang on 2017/9/2.

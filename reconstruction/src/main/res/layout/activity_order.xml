@@ -338,6 +338,7 @@
                                 android:layout_toLeftOf="@id/img_icon"
                                 android:layout_marginRight="@dimen/dp_15"
                                 android:layout_centerVertical="true"
+                                android:text="@string/exchangedcoupon"
                                 android:textColor="#a0a0a0"
                                 android:textSize="@dimen/sp_15" />
                             <TextView
@@ -371,6 +372,7 @@
                                 android:layout_toLeftOf="@id/img_icon2"
                                 android:layout_marginRight="@dimen/dp_15"
                                 android:layout_centerVertical="true"
+                                android:text="@string/no_bouns"
                                 android:textColor="#a0a0a0"
                                 android:textSize="@dimen/sp_15" />
                             <TextView
@@ -405,6 +407,7 @@
                                 android:layout_toLeftOf="@id/img_icon3"
                                 android:layout_marginRight="@dimen/dp_15"
                                 android:layout_centerVertical="true"
+                                android:text="@string/use_giftcard"
                                 android:textColor="#a0a0a0"
                                 android:textSize="@dimen/sp_15"/>
                         </RelativeLayout>

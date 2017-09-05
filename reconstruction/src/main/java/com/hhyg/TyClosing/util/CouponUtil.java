@@ -9,10 +9,10 @@ import com.hhyg.TyClosing.entities.order.CouponBean;
 
 public class CouponUtil {
     public static void initCoupon(CouponBean res, Coupon coupon) {
-        coupon.setEnable(true);
         coupon.setCode_str(res.getCode_str());
         coupon.setConflict(res.getConflict());
         coupon.setDiscountDesc(res.getDiscountDesc());
+        coupon.setUnavailableReason(res.getUnavailableReason());
         coupon.setName(res.getName());
         coupon.setIs_new(res.getIs_new());
         coupon.setIsEntire(res.getIsEntire());

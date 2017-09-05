@@ -12,14 +12,12 @@ import java.util.Locale;
 
 public class TimeUtill {
     public static String TimeStamp2Date(String timestampString) {
-        String res = "";
+        String date = "";
         if(!TextUtils.isEmpty(timestampString)){
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy.MM.dd");
-            long lt = new Long(timestampString);
-            Date date = new Date(lt);
-            res = simpleDateFormat.format(date);
+            Long timestamp = Long.parseLong(timestampString)*1000;
+            date = new java.text.SimpleDateFormat("yyyy.MM.dd").format(new java.util.Date(timestamp));
         }
-        return res;
+        return date;
 
     }
 }

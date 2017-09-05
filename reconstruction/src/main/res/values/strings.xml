@@ -93,4 +93,7 @@
     <string name="empty_coupon">暂时没有优惠券哦～</string>
     <string name="giftcard_warnning">*选择的礼品卡总金额必须小于订单金额，否则礼品卡不可用</string>
     <string name="bouns_warnning">*一笔订单限使用一个红包</string>
+    <string name="exchangedcoupon">兑换优惠券</string>
+    <string name="no_bouns">无可用红包</string>
+    <string name="use_giftcard">使用礼品卡</string>
 </resources>

@@ -74,7 +74,6 @@ public class ExchangecouponReq {
         /**
          * exchangecode : 299337980453174
          */
-
         private String exchangecode;
 
         public String getExchangecode() {

@@ -16,7 +16,16 @@ public class CouponBean {
     private String end_time;
     private String name;
     private String discountDesc;
+    private String unavailableReason;
     private List<String> conflict;
+
+    public void setUnavailableReason(String unavailableReason) {
+        this.unavailableReason = unavailableReason;
+    }
+
+    public String getUnavailableReason() {
+        return unavailableReason;
+    }
 
     public int getIs_new() {
         return is_new;

@@ -50,7 +50,8 @@
                 android:paddingRight="33dp"
                 android:textSize="@dimen/sp_15"
                 android:textColor="@color/light"
-                android:text="免税易购礼品卡"
+                android:maxLength="20"
+                android:ellipsize="end"
                 />
             <TextView
                 android:id="@+id/bottom_tv"

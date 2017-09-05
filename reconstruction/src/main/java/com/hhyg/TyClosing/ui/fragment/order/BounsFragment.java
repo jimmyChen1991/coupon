@@ -120,6 +120,7 @@ public class BounsFragment extends BaseBottomDialogFragment {
                         bounsOp.onSelectBouns();
                     }
                 }
+                adapter.notifyDataSetChanged();
             }
         });
         rv.setAdapter(adapter);
@@ -135,13 +136,12 @@ public class BounsFragment extends BaseBottomDialogFragment {
     public synchronized void onSelectedItemChange(){
         double thePrice = orderPrice.getFianlPrice();
         for (Bouns bouns : bounses){
-            if(bouns.getMoney() <= thePrice){
+            if(!bouns.isUsed() && thePrice <= bouns.getMoney()){
                 bouns.setAvailable(false);
             }else {
                 bouns.setAvailable(true);
             }
         }
-        adapter.notifyDataSetChanged();
     }
 
     @Override

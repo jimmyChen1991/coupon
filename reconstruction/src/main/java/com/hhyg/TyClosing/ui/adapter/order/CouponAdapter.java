@@ -52,15 +52,15 @@ public class CouponAdapter extends BaseMultiItemQuickAdapter<Coupon,BaseViewHold
                 if(item.isEnable() && item.isUsed()){
                     helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_coupon);
                     helper.getView(R.id.countWrap).setBackgroundResource(R.color.coupon);
-                    helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.coupon_checked); helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable_ordercut);
+                    helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.coupon_checked);
                 }else{
                     helper.getView(R.id.wrap).setBackgroundResource(R.drawable.shape_disable_ordercut);
                     helper.getView(R.id.countWrap).setBackgroundResource(R.color.price);
                     helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable_ordercut);
                 }
 
-                if(item.isEnable() ){
-
+                if(item.isEnable() && item.isAvailable()){
+                    helper.setText(R.id.bottom_tv,item.getTimeTv());
                 }else{
                     helper.setText(R.id.bottom_tv,item.getUnavailableReason());
                 }
