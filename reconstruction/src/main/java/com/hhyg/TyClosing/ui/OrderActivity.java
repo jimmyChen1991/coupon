@@ -574,8 +574,8 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
         req.setImei(commonParam.getImei());
         req.setPlatformId(commonParam.getPlatformId());
         req.setShopid(commonParam.getShopId());
-        data.setNeedcheckcode(needCheckCode ? 1 : 0);
-//        data.setNeedcheckcode(0);
+//        data.setNeedcheckcode(needCheckCode ? 1 : 0);
+        data.setNeedcheckcode(0);
         data.setCode(input);
         data.setFinal_total_price(vaildateInfo.getFinalPrice());
         data.setDeliverplace(String.valueOf(ClosingRefInfoMgr.getInstance().getCurPickupId()));

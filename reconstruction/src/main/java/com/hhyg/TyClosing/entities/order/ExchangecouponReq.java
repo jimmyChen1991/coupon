@@ -75,6 +75,15 @@ public class ExchangecouponReq {
          * exchangecode : 299337980453174
          */
         private String exchangecode;
+        private String mobile_phone;
+
+        public void setMobile_phone(String mobile_phone) {
+            this.mobile_phone = mobile_phone;
+        }
+
+        public String getMobile_phone() {
+            return mobile_phone;
+        }
 
         public String getExchangecode() {
             return exchangecode;
