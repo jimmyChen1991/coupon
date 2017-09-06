@@ -44,6 +44,11 @@ public class CouponAdapter extends BaseMultiItemQuickAdapter<Coupon,BaseViewHold
                 break;
             case Coupon.DISABLE:
                 helper.setText(R.id.title,"不使用优惠券");
+                if(item.isDiableUsed()){
+                    helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.coupon_checked);
+                }else{
+                    helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable);
+                }
                 break;
             case Coupon.COUPON:
                 helper.setText(R.id.count,item.getSpannableString())
@@ -59,8 +64,14 @@ public class CouponAdapter extends BaseMultiItemQuickAdapter<Coupon,BaseViewHold
                     helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable_ordercut);
                 }
 
-                if(item.isEnable() && item.isAvailable()){
-                    helper.setText(R.id.bottom_tv,item.getTimeTv());
+                if(item.isEnable()){
+                    if(!item.isAvailable()){
+                        helper.setText(R.id.bottom_tv,item.getUnavailableReason());
+                    }else if(!item.isPriceAvailable()){
+                        helper.setText(R.id.bottom_tv,item.getUnavailableReason());
+                    }else{
+                        helper.setText(R.id.bottom_tv,item.getTimeTv());
+                    }
                 }else{
                     helper.setText(R.id.bottom_tv,item.getUnavailableReason());
                 }

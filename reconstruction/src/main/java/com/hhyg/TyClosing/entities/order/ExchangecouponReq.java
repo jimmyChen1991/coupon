@@ -1,34 +1,29 @@
 package com.hhyg.TyClosing.entities.order;
 
+import java.util.List;
+
 /**
  * Created by user on 2017/9/3.
  */
 
 public class ExchangecouponReq {
 
+
     /**
-     * op : getcoupons
-     * channel : 体验店渠道号
-     * imei : imei号,可选（H5可不填）
-     * shopid : 体验店ID
-     * platformId : 客户端
-     * data : {"exchangecode":"299337980453174"}
+     * channel : 673
+     * data : {"deliverplace":"3","final_total_price":"1335","exchangecode":"842430381266705","goodslist":[{"barcode":"3346470114746","num":1},{"barcode":"027131826705","num":1}],"mobile_phone":"13208902327","token":"UGNQZQBhAzYEOFA4A2FUYVIxWzxQYwgpDTwANV5jDDcIPVdjVTRTKg=="}
+     * imei : 11391e0ce75b9f42
+     * op : exchangecoupons
+     * platformId : 3
+     * shopid : 1
      */
 
-    private String op = "getcoupons";
     private String channel;
-    private String imei;
-    private String shopid;
-    private String platformId;
     private DataBean data;
-
-    public String getOp() {
-        return op;
-    }
-
-    public void setOp(String op) {
-        this.op = op;
-    }
+    private String imei;
+    private String op;
+    private String platformId;
+    private String shopid;
 
     public String getChannel() {
         return channel;
@@ -36,30 +31,6 @@ public class ExchangecouponReq {
 
     public void setChannel(String channel) {
         this.channel = channel;
-    }
-
-    public String getImei() {
-        return imei;
-    }
-
-    public void setImei(String imei) {
-        this.imei = imei;
-    }
-
-    public String getShopid() {
-        return shopid;
-    }
-
-    public void setShopid(String shopid) {
-        this.shopid = shopid;
-    }
-
-    public String getPlatformId() {
-        return platformId;
-    }
-
-    public void setPlatformId(String platformId) {
-        this.platformId = platformId;
     }
 
     public DataBean getData() {
@@ -70,27 +41,48 @@ public class ExchangecouponReq {
         this.data = data;
     }
 
-    public static class DataBean {
-        /**
-         * exchangecode : 299337980453174
-         */
+    public String getImei() {
+        return imei;
+    }
+
+    public void setImei(String imei) {
+        this.imei = imei;
+    }
+
+    public String getOp() {
+        return op;
+    }
+
+    public void setOp(String op) {
+        this.op = op;
+    }
+
+    public String getPlatformId() {
+        return platformId;
+    }
+
+    public void setPlatformId(String platformId) {
+        this.platformId = platformId;
+    }
+
+    public String getShopid() {
+        return shopid;
+    }
+
+    public void setShopid(String shopid) {
+        this.shopid = shopid;
+    }
+
+    public static class DataBean extends AutodataReq{
+
         private String exchangecode;
-        private String mobile_phone;
 
-        public void setMobile_phone(String mobile_phone) {
-            this.mobile_phone = mobile_phone;
-        }
-
-        public String getMobile_phone() {
-            return mobile_phone;
+        public void setExchangecode(String exchangecode) {
+            this.exchangecode = exchangecode;
         }
 
         public String getExchangecode() {
             return exchangecode;
-        }
-
-        public void setExchangecode(String exchangecode) {
-            this.exchangecode = exchangecode;
         }
     }
 }

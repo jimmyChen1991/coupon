@@ -114,6 +114,7 @@
             android:id="@+id/use_coupon"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/dp_10"
             android:background="@drawable/checkcode_selector"
             android:textSize="@dimen/sp_18"
             android:textColor="@color/ffffff"

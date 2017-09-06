@@ -35,8 +35,26 @@ public class Coupon implements MultiItemEntity{
     private boolean used;
     private boolean enable;
     private boolean available;
+    private boolean priceAvailable;
     private int count;
     private String nameTv;
+    private boolean diableUsed;
+
+    public void setPriceAvailable(boolean priceAvailable) {
+        this.priceAvailable = priceAvailable;
+    }
+
+    public boolean isPriceAvailable() {
+        return priceAvailable;
+    }
+
+    public void setDiableUsed(boolean diableUsed) {
+        this.diableUsed = diableUsed;
+    }
+
+    public boolean isDiableUsed() {
+        return diableUsed;
+    }
 
     public void setAvailable(boolean available) {
         this.available = available;

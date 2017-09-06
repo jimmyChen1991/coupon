@@ -254,7 +254,7 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
     public synchronized void onSelectedItemChange(){
         double thePrice = orderPrice.getFianlPrice();
         for (Giftcard giftcard : cards){
-            if(!giftcard.isUsed() && thePrice <= giftcard.getMoney()){
+            if(!giftcard.isUsed() && thePrice < giftcard.getMoney()){
                 giftcard.setAvailable(false);
             }else {
                 giftcard.setAvailable(true);
@@ -274,7 +274,7 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
 
     @Override
     public boolean getCancelOutside() {
-        return false;
+        return true;
     }
 
     @Override
@@ -366,23 +366,11 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                     .doOnNext(new Consumer<Giftcard>() {
                         @Override
                         public void accept(@NonNull Giftcard giftcard) throws Exception {
-                            if(cards.size() == 0){
-                                cards.add(giftcard);
-                                Giftcard disableCard = new Giftcard(Giftcard.DISABLE);
-                                cards.add(disableCard);
-                            }else{
-                                cards.add(cards.size() - 1,giftcard);
-                            }
+                            cards.add(giftcard);
                         }
                     })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .doFinally(new Action() {
-                        @Override
-                        public void run() throws Exception {
-                            ProgressDialogUtil.hide();
-                        }
-                    })
                     .subscribe(new Observer<Giftcard>() {
                         @Override
                         public void onSubscribe(@NonNull Disposable d) {
@@ -395,6 +383,9 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                             adapter.notifyDataSetChanged();
                             emptyView.setVisibility(View.GONE);
                             rvWrap.setVisibility(View.VISIBLE);
+                            if(giftcard.getMoney() < orderPrice.getFianlPrice()){
+                                checkTheCard(giftcard);
+                            }
                         }
 
                         @Override
@@ -404,6 +395,7 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                             }else {
                                 Toasty.error(getActivity(),getActivity().getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
                             }
+                            ProgressDialogUtil.hide();
                         }
 
                         @Override

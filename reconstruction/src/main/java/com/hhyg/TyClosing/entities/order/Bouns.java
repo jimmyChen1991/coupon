@@ -24,6 +24,15 @@ public class Bouns implements MultiItemEntity {
     private SpannableString spannableString;
     private boolean available;
     private String unavailableReason;
+    private boolean disableUsed;
+
+    public void setDisableUsed(boolean disableUsed) {
+        this.disableUsed = disableUsed;
+    }
+
+    public boolean isDisableUsed() {
+        return disableUsed;
+    }
 
     public void setUnavailableReason(String unavailableReason) {
         this.unavailableReason = unavailableReason;

@@ -50,6 +50,11 @@ public class BounsAdapter extends BaseMultiItemQuickAdapter<Bouns,BaseViewHolder
                 break;
             case Bouns.DISABLE:
                 helper.setText(R.id.title,"不使用红包");
+                if(item.isDisableUsed()){
+                    helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.bouns_checked);
+                }else{
+                    helper.getView(R.id.right_icon).setBackgroundResource(R.drawable.disable);
+                }
                 break;
 
         }

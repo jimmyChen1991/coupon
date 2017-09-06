@@ -32,6 +32,7 @@ import com.hhyg.TyClosing.di.componet.DaggerOrderComponent;
 import com.hhyg.TyClosing.di.module.CommonNetParamModule;
 import com.hhyg.TyClosing.di.module.OrderModule;
 import com.hhyg.TyClosing.entities.CommonParam;
+import com.hhyg.TyClosing.entities.order.AutodataReq;
 import com.hhyg.TyClosing.entities.order.Bouns;
 import com.hhyg.TyClosing.entities.order.Coupon;
 import com.hhyg.TyClosing.entities.order.CouponBean;
@@ -170,7 +171,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     Button vaildateCode;
     @BindView(R.id.member_input_code)
     EditText vaildateCodeInput;
-
+    private boolean vaildated;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -490,17 +491,19 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                                     CouponBean res = couponsBean.getUSABLE().get(index);
                                     Coupon coupon = new Coupon(Coupon.COUPON);
                                     if(thePrice <= coupon.getReduce_money()){
-                                        coupon.setAvailable(false);
+                                        coupon.setPriceAvailable(false);
                                         coupon.setUnavailableReason("面额大于实付金额");
                                     }else {
-                                        coupon.setAvailable(true);
+                                        coupon.setPriceAvailable(true);
                                     }
                                     coupon.setEnable(true);
+                                    coupon.setAvailable(true);
                                     CouponUtil.initCoupon(res, coupon);
                                     couponFragment.addCoupon(coupon);
                                 }
                                 Coupon disable = new Coupon(Coupon.DISABLE);
                                 disable.setEnable(true);
+                                disable.setDiableUsed(true);
                                 couponFragment.addCoupon(disable);
                             }
                         }
@@ -542,6 +545,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         @Override
                         public void onNext(@NonNull DiscountRes discountRes) {
                             Toasty.success(OrderActivity.this, discountRes.getMsg(), Toast.LENGTH_SHORT).show();
+                            vaildated = true;
                             showSuccessUI();
                             freshSelectedText();
                         }
@@ -569,7 +573,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
     private DiscountReq getDiscountReq(String input,boolean needCheckCode) {
         DiscountReq req = new DiscountReq();
-        DiscountReq.DataBean data = new DiscountReq.DataBean();
+        AutodataReq data = new AutodataReq();
         req.setChannel(commonParam.getChannelId());
         req.setImei(commonParam.getImei());
         req.setPlatformId(commonParam.getPlatformId());
@@ -581,9 +585,9 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
         data.setDeliverplace(String.valueOf(ClosingRefInfoMgr.getInstance().getCurPickupId()));
         data.setMobile_phone(vaildateInfo.getPhone());
         data.setToken(vaildateInfo.getToken());
-        List<DiscountReq.DataBean.GoodslistBean> goods = new ArrayList<DiscountReq.DataBean.GoodslistBean>();
+        List<AutodataReq.GoodslistBean> goods = new ArrayList<>();
         for (VaildateInfo.GoodsSkuBean bean : vaildateInfo.getGoodsSku()) {
-            DiscountReq.DataBean.GoodslistBean res = new DiscountReq.DataBean.GoodslistBean();
+            AutodataReq.GoodslistBean res = new AutodataReq.GoodslistBean();
             res.setBarcode(bean.getBarcode());
             res.setNum(bean.getNumber());
             goods.add(res);
@@ -654,19 +658,38 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                     @Override
                     public void accept(@NonNull OwnpayReq.DataBean dataBean) throws Exception {
                         StringBuilder sb = new StringBuilder();
-                        for (Coupon coupon : couponFragment.getCoupons()){
-                            if(coupon.isEnable() && coupon.isUsed()){
+                        for (int index = 0; index < couponFragment.getCoupons().size() ; index ++){
+                            Coupon coupon = couponFragment.getCoupons().get(index);
+                            if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable() && coupon.isUsed()){
                                 sb.append(coupon.getCode_str());
                                 sb.append(",");
                             }
                         }
-                        dataBean.setCouponCode(sb.toString());
+                        String str = sb.toString();
+                        String res = null;
+                        if(!TextUtils.isEmpty(str)){
+                            int size = str.length();
+                            res = str.substring(0,size -1);
+                        }
+                        dataBean.setCouponCode(res);
                     }
                 })
                 .doOnNext(new Consumer<OwnpayReq.DataBean>() {
                     @Override
                     public void accept(@NonNull OwnpayReq.DataBean dataBean) throws Exception {
                         dataBean.setGiftcardKey(giftcardFragment.getToken());
+                    }
+                })
+                .doOnNext(new Consumer<OwnpayReq.DataBean>() {
+                    @Override
+                    public void accept(@NonNull OwnpayReq.DataBean dataBean) throws Exception {
+                        for (Bouns bouns : bounsFragment.getBounses()){
+                            if (bouns.isUsed()){
+                                dataBean.setBonusNumber(bouns.getBonus_id());
+
+                            }
+                        }
+
                     }
                 })
                 .map(new Function<OwnpayReq.DataBean, OwnpayReq>() {
@@ -903,9 +926,15 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                 couponPrice += coupon.getReduce_money();
                 usedCount ++;
             }
-            if(coupon.isEnable() && coupon.isAvailable() && coupon.getItemType() == Coupon.COUPON){
-                avaliable = true;
-                avaliableCount ++;
+            if(coupon.isEnable() && coupon.getItemType() == Coupon.COUPON){
+
+                if(coupon.isAvailable() && coupon.isPriceAvailable()){
+                    avaliable = true;
+                    avaliableCount ++;
+                }else if(coupon.isPriceAvailable()){
+                    avaliable = true;
+                    avaliableCount ++;
+                }
             }
         }
         if(used){
@@ -1006,6 +1035,11 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     }
 
     @Override
+    public boolean isVaildate() {
+        return vaildated;
+    }
+
+    @Override
     public void onSelectedGift() {
         setMoney();
         couponFragment.onSelectedItemChange();
@@ -1018,7 +1052,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
         double orderPrice = Double.parseDouble(vaildateInfo.getFinalPrice());
         double thePrice = 0.00;
         for (Coupon coupon : couponFragment.getCoupons()){
-            if(coupon.isUsed()){
+            if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable() && coupon.isUsed()){
                 thePrice += coupon.getReduce_money();
             }
         }
@@ -1028,7 +1062,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
             }
         }
         for (Bouns bouns : bounsFragment.getBounses()){
-            if(bouns.isUsed()){
+            if(bouns.getItemType() == Bouns.BOUNS && bouns.isUsed()){
                 thePrice += bouns.getMoney();
                 break;
             }
