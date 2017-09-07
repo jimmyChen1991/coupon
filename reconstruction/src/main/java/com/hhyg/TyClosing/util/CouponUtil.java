@@ -22,6 +22,11 @@ public class CouponUtil {
         coupon.setReduce_money(res.getReduce_money());
         coupon.setTimeTv(TimeUtill.TimeStamp2Date(res.getStart_time()) + " ~ " + TimeUtill.TimeStamp2Date(res.getEnd_time()));
         coupon.setSpannableString(SpannableUtil.discountSpan(res.getReduce_money()));
-        coupon.setNameTv("【" + res.getName() + "】" + res.getDiscountDesc());
+        String tmp = "【" + res.getName() + "】" + res.getDiscountDesc();
+        if(tmp.length() > 30){
+            tmp = tmp.substring(0,27) + "...";
+        }
+        tmp = tmp.replace("\r\n"," ");
+        coupon.setNameTv(tmp);
     }
 }

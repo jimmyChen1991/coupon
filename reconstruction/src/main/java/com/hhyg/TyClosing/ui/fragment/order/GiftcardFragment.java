@@ -353,7 +353,7 @@ public class GiftcardFragment extends BaseBottomDialogFragment {
                             card.setTime_end(TimeUtill.TimeStamp2Date(bean.getTime_end()));
                             card.setTimeTv(TimeUtill.TimeStamp2Date(bean.getTime_begin()) +" ~ " + TimeUtill.TimeStamp2Date(bean.getTime_end()));
                             card.setBottemContent(TimeUtill.TimeStamp2Date(bean.getTime_begin()) +" ~ " + TimeUtill.TimeStamp2Date(bean.getTime_end()));
-                            card.setUnavailableReason("面额大于实付金额");
+                            card.setUnavailableReason("优惠金额大于订单实付金额");
                             double thePrice = orderPrice.getFianlPrice();
                             if(thePrice <= bean.getMoney()){
                                 card.setAvailable(false);

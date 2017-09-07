@@ -96,4 +96,6 @@
     <string name="exchangedcoupon">兑换优惠券</string>
     <string name="no_bouns">无可用红包</string>
     <string name="use_giftcard">使用礼品卡</string>
+    <string name="price_notavailable">优惠券面额大于订单实付金额</string>
+    <string name="conflict_notavailable">与已勾选的券有商品范围重叠</string>
 </resources>

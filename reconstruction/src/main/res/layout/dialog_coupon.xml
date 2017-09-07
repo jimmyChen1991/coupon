@@ -70,7 +70,7 @@
             android:layout_height="42dp"
             android:textColor="@color/ffffff"
             android:textSize="@dimen/sp_15"
-            android:text="使用"
+            android:text="兑换"
             android:layout_marginLeft="22dp"
             android:background="@drawable/checkcode_selector"
             />
@@ -118,7 +118,7 @@
             android:background="@drawable/checkcode_selector"
             android:textSize="@dimen/sp_18"
             android:textColor="@color/ffffff"
-            android:text="@string/queding"
+            android:text="确定"
             />
     </LinearLayout>
 </RelativeLayout>

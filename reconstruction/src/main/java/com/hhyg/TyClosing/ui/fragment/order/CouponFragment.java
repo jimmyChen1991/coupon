@@ -1,13 +1,10 @@
 package com.hhyg.TyClosing.ui.fragment.order;
 
-import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -17,18 +14,15 @@ import com.google.gson.Gson;
 import com.hhyg.TyClosing.R;
 import com.hhyg.TyClosing.apiService.OrderSevice;
 import com.hhyg.TyClosing.entities.CommonParam;
-import com.hhyg.TyClosing.entities.order.Bouns;
 import com.hhyg.TyClosing.entities.order.Coupon;
 import com.hhyg.TyClosing.entities.order.CouponBean;
 import com.hhyg.TyClosing.entities.order.DiscountReq;
 import com.hhyg.TyClosing.entities.order.DiscountRes;
 import com.hhyg.TyClosing.entities.order.ExchangecouponReq;
 import com.hhyg.TyClosing.entities.order.ExchangecouponRes;
-import com.hhyg.TyClosing.entities.order.Giftcard;
 import com.hhyg.TyClosing.exceptions.ServiceDataException;
 import com.hhyg.TyClosing.exceptions.ServiceMsgException;
 import com.hhyg.TyClosing.mgr.OrderPrice;
-import com.hhyg.TyClosing.ui.adapter.order.BounsAdapter;
 import com.hhyg.TyClosing.ui.adapter.order.CouponAdapter;
 import com.hhyg.TyClosing.ui.fragment.BaseBottomDialogFragment;
 import com.hhyg.TyClosing.util.CouponUtil;
@@ -50,7 +44,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
-import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 
@@ -118,7 +111,7 @@ public class CouponFragment extends BaseBottomDialogFragment {
             if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable()){
                 if(!coupon.isUsed() && thePrice < coupon.getReduce_money()){
                     coupon.setPriceAvailable(false);
-                    coupon.setUnavailableReason("面额大于实付金额");
+                    coupon.setUnavailableReason(getString(R.string.price_notavailable));
                 }else{
                     coupon.setPriceAvailable(true);
                 }
@@ -152,9 +145,9 @@ public class CouponFragment extends BaseBottomDialogFragment {
                 Coupon coupon = coupons.get(position);
                 if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable()){
                     if(!coupon.isAvailable()){
-                        Toasty.warning(getActivity(),"与已勾选的券有商品范围重叠，请先取消已有勾选").show();
+                        Toasty.warning(getActivity(),getString(R.string.conflict_notavailable) + "，请先取消已有勾选").show();
                     }else if(!coupon.isPriceAvailable()){
-                        Toasty.warning(getActivity(),"优惠券金额大于订单目前实付金额，不可选择",Toast.LENGTH_SHORT).show();
+                        Toasty.warning(getActivity(),getString(R.string.price_notavailable) + "，不可选择",Toast.LENGTH_SHORT).show();
                     }
                 }
                 if(coupon.getItemType() == Coupon.DISABLE){
@@ -227,7 +220,7 @@ public class CouponFragment extends BaseBottomDialogFragment {
                             }
 
                         }else {
-                            makeCouponUsed(coupon,coupons,false);
+                            makeCouponUsed(coupon,coupons);
                         }
                         calaDisable(false);
                     }
@@ -383,6 +376,7 @@ public class CouponFragment extends BaseBottomDialogFragment {
 
                             @Override
                             public void onNext(@NonNull DiscountRes discountRes) {
+                                Toasty.success(getActivity(),discountRes.getMsg(),Toast.LENGTH_SHORT).show();
                                 coupons = (ArrayList<Coupon>) tmpCoupon.clone();
                                 onSelectedItemChange(coupons);
                                 couponOp.calaAvaliable();
@@ -516,7 +510,7 @@ public class CouponFragment extends BaseBottomDialogFragment {
             for (Coupon coupon : tmpCoupon){
                 if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable() && coupon.getCode_str().equals(couponId.getText().toString())){
                     if(coupon.isAvailable() && coupon.isPriceAvailable()){
-                        makeCouponUsed(coupon,tmpCoupon,false);
+                        makeCouponUsed(coupon,tmpCoupon);
                     }
                 }
             }
@@ -530,7 +524,7 @@ public class CouponFragment extends BaseBottomDialogFragment {
                 if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable() && coupon.isUsed()){
                     for (Coupon tmpBean : tmpCoupon){
                         if(tmpBean.isEnable() && tmpBean.getItemType() == Coupon.COUPON && tmpBean.getCode_str().equals(coupon.getCode_str())){
-                            makeCouponUsed(tmpBean,tmpCoupon,false);
+                            makeCouponUsed(tmpBean,tmpCoupon);
                         }
                     }
                 }
@@ -538,17 +532,15 @@ public class CouponFragment extends BaseBottomDialogFragment {
         }
     }
 
-    private void makeCouponUsed(Coupon coupon,ArrayList<Coupon> couponArrayList,boolean forinit) {
+    private void makeCouponUsed(Coupon coupon,ArrayList<Coupon> couponArrayList) {
         coupon.setUsed(true);
-        if(!forinit){
-            onSelectedItemChange(couponArrayList);
-            couponOp.onSelectedCoupon();
-        }
+        onSelectedItemChange(couponArrayList);
+        couponOp.onSelectedCoupon();
         if(coupon.getIsEntire() == 1){
             for (Coupon bean : couponArrayList){
                 if(bean.getItemType() == Coupon.COUPON && bean.isEnable() && bean.isAvailable()){
                     bean.setAvailable(false);
-                    bean.setUnavailableReason("与已选优惠券商品范围重叠");
+                    bean.setUnavailableReason(getString(R.string.conflict_notavailable));
                 }
             }
             coupon.setAvailable(true);
@@ -559,7 +551,7 @@ public class CouponFragment extends BaseBottomDialogFragment {
                         for (Coupon bean : couponArrayList){
                             if((bean.getItemType() == Coupon.COUPON  && bean.isEnable() && bean.getCode_str().equals(conflict) && !bean.isUsed()) || (bean.isEnable() && bean.getItemType() == Coupon.COUPON&& bean.getIsEntire() == 1)){
                                 bean.setAvailable(false);
-                                bean.setUnavailableReason("与已选优惠券商品范围重叠");
+                                bean.setUnavailableReason(getString(R.string.conflict_notavailable));
                             }
 
                         }

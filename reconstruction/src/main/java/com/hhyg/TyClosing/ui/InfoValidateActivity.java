@@ -102,7 +102,7 @@ public class InfoValidateActivity extends Activity implements View.OnClickListen
             idCode.setText(idcard[7]);
             flightNum.setText("MF5054");
             userName.setText("李飞");
-            phone.setText("13138964919");
+            phone.setText("13764788026");
 
             SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm");
             String date = sDateFormat.format(new java.util.Date());
