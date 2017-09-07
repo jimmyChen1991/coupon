@@ -58,7 +58,7 @@ public class BounsFragment extends BaseBottomDialogFragment {
         if(bounses.size() == 0){
             bounses.add(bouns);
             Bouns disableBouns = new Bouns(Bouns.DISABLE);
-            disableBouns.setDisableUsed(true);
+            disableBouns.setDisableUsed(false);
             bounses.add(disableBouns);
         }else{
             bounses.add(bounses.size() - 1, bouns);
@@ -103,6 +103,7 @@ public class BounsFragment extends BaseBottomDialogFragment {
                             break;
                         }
                     }
+                    calaDisable(true);
                 }else{
                     if(item.isAvailable()){
                         if(item.isUsed()){
@@ -117,9 +118,9 @@ public class BounsFragment extends BaseBottomDialogFragment {
                         }
                         onSelectedItemChange();
                         bounsOp.onSelectBouns();
+                        calaDisable(false);
                     }
                 }
-                calaDisable();
                 adapter.notifyDataSetChanged();
             }
         });
@@ -133,14 +134,7 @@ public class BounsFragment extends BaseBottomDialogFragment {
         }
     }
 
-    private void calaDisable(){
-        boolean disable = true;
-        for (Bouns bouns : bounses){
-            if(bouns.getItemType() == Bouns.BOUNS && bouns.isUsed()){
-                disable = false;
-                break;
-            }
-        }
+    private void calaDisable(boolean disable){
         if(disable){
             for (Bouns bouns : bounses){
                 if(bouns.getItemType() == Bouns.DISABLE){

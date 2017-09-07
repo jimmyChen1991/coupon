@@ -17,6 +17,15 @@ public class OwnpayRes {
     private int errcode;
     private DataBean data;
     private String msg;
+    private int coupons_errcode;
+
+    public void setCoupons_errcode(int coupons_errcode) {
+        this.coupons_errcode = coupons_errcode;
+    }
+
+    public int getCoupons_errcode() {
+        return coupons_errcode;
+    }
 
     public int getErrcode() {
         return errcode;

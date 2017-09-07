@@ -52,4 +52,6 @@ public interface OrderSevice {
     @FormUrlEncoded
     Observable<ExchangecouponRes> exchangeCoupon(@Field("parameter") String parameter);
 
+    @POST("index.php?r=couponsnew/todaycoupons")
+    Observable<ExchangecouponRes> onCouponError(@Field("parameter") String parameter);
 }

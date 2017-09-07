@@ -38,6 +38,7 @@ import com.hhyg.TyClosing.entities.order.Coupon;
 import com.hhyg.TyClosing.entities.order.CouponBean;
 import com.hhyg.TyClosing.entities.order.DiscountReq;
 import com.hhyg.TyClosing.entities.order.DiscountRes;
+import com.hhyg.TyClosing.entities.order.ExchangecouponRes;
 import com.hhyg.TyClosing.entities.order.Giftcard;
 import com.hhyg.TyClosing.entities.order.HasDiscountReq;
 import com.hhyg.TyClosing.entities.order.HasDiscountRes;
@@ -48,6 +49,8 @@ import com.hhyg.TyClosing.entities.order.SecuryRes;
 import com.hhyg.TyClosing.entities.order.SendVaildateCodeReq;
 import com.hhyg.TyClosing.entities.order.SendVaildateCodeRes;
 import com.hhyg.TyClosing.entities.order.VaildateInfo;
+import com.hhyg.TyClosing.exceptions.CouponErrorException;
+import com.hhyg.TyClosing.exceptions.ServiceDataException;
 import com.hhyg.TyClosing.exceptions.ServiceMsgException;
 import com.hhyg.TyClosing.global.MyApplication;
 import com.hhyg.TyClosing.info.GoodSku;
@@ -66,6 +69,7 @@ import com.hhyg.TyClosing.util.ProgressDialogUtil;
 import com.hhyg.TyClosing.util.SpannableUtil;
 import com.squareup.picasso.Picasso;
 
+import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -431,144 +435,125 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
         if (TextUtils.isEmpty(input)) {
             Toasty.warning(this, "请输入验证码", Toast.LENGTH_SHORT).show();
         } else {
-            Observable.just(commonParam)
-                    .map(new Function<CommonParam, DiscountReq>() {
-                        @Override
-                        public DiscountReq apply(@NonNull CommonParam param) throws Exception {
-                            return getDiscountReq(input,true);
-                        }
-                    })
-                    .flatMap(new Function<DiscountReq, ObservableSource<DiscountRes>>() {
-                        @Override
-                        public ObservableSource<DiscountRes> apply(@NonNull DiscountReq discountReq) throws Exception {
-                            return fastIndexOrderSevice.getDiscount(gson.toJson(discountReq));
-                        }
-                    })
-                    .doOnNext(new Consumer<DiscountRes>() {
-                        @Override
-                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            if (discountRes.getErrcode() != 1) {
-                                throw new ServiceMsgException(discountRes.getMsg());
-                            }
-                        }
-                    })
-                    .doOnNext(new Consumer<DiscountRes>() {
-                        @Override
-                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            if (discountRes.getData().getBonus() != null && discountRes.getData().getBonus().size() != 0) {
-                                double thePrice = getFianlPrice();
-                                for (DiscountRes.DataBean.BonusBean bean : discountRes.getData().getBonus()) {
-                                    Bouns bouns = new Bouns(Bouns.BOUNS);
-                                    bouns.setSpannableString(SpannableUtil.discountSpan(bean.getMoney()));
-                                    bouns.setMoney(bean.getMoney());
-                                    bouns.setBonus_id(bean.getBonus_id());
-                                    bouns.setEffective_date(bean.getEffective_date());
-                                    bouns.setTitle(bean.getTitle());
-                                    bouns.setIntro(bean.getIntro());
-                                    bouns.setUnavailableReason("面额大于实付金额");
-                                    if(thePrice <= bouns.getMoney()){
-                                        bouns.setAvailable(false);
-                                    }else {
-                                        bouns.setAvailable(true);
-                                    }
-                                    bounsFragment.addBouns(bouns);
-                                }
-
-                            }
-                        }
-                    })
-                    .doOnNext(new Consumer<DiscountRes>() {
-                        @Override
-                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
-                            if (couponsBean != null && couponsBean.getUSABLE() != null && couponsBean.getUSABLE().size() != 0) {
-                                Coupon title = new Coupon(Coupon.TITLE);
-                                title.setEnable(true);
-                                title.setCount(couponsBean.getUSABLE().size());
-                                couponFragment.addCoupon(title);
-                                double thePrice = getFianlPrice();
-                                for (int index = 0; index < couponsBean.getUSABLE().size(); index++) {
-                                    CouponBean res = couponsBean.getUSABLE().get(index);
-                                    Coupon coupon = new Coupon(Coupon.COUPON);
-                                    if(thePrice <= coupon.getReduce_money()){
-                                        coupon.setPriceAvailable(false);
-                                        coupon.setUnavailableReason("面额大于实付金额");
-                                    }else {
-                                        coupon.setPriceAvailable(true);
-                                    }
-                                    coupon.setEnable(true);
-                                    coupon.setAvailable(true);
-                                    CouponUtil.initCoupon(res, coupon);
-                                    couponFragment.addCoupon(coupon);
-                                }
-                                Coupon disable = new Coupon(Coupon.DISABLE);
-                                disable.setEnable(true);
-                                disable.setDiableUsed(true);
-                                couponFragment.addCoupon(disable);
-                            }
-                        }
-                    })
-                    .doOnNext(new Consumer<DiscountRes>() {
-                        @Override
-                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
-                            if (couponsBean != null && couponsBean.getUNUSABLE() != null && couponsBean.getUNUSABLE().size() != 0) {
-                                Coupon title = new Coupon(Coupon.TITLE);
-                                title.setEnable(false);
-                                title.setCount(couponsBean.getUNUSABLE().size());
-                                couponFragment.addCoupon(title);
-                                for (int index = 0; index < couponsBean.getUNUSABLE().size(); index++) {
-                                    CouponBean res = couponsBean.getUNUSABLE().get(index);
-                                    Coupon coupon = new Coupon(Coupon.COUPON);
-                                    coupon.setEnable(false);
-                                    CouponUtil.initCoupon(res,coupon);
-                                    couponFragment.addCoupon(coupon);
-                                }
-                            }
-                        }
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doFinally(new Action() {
-                        @Override
-                        public void run() throws Exception {
-                            ProgressDialogUtil.hide();
-                        }
-                    })
-                    .subscribe(new Observer<DiscountRes>() {
-                        @Override
-                        public void onSubscribe(@NonNull Disposable d) {
-                            disposables.add(d);
-                            ProgressDialogUtil.show(OrderActivity.this);
-                        }
-
-                        @Override
-                        public void onNext(@NonNull DiscountRes discountRes) {
-                            Toasty.success(OrderActivity.this, discountRes.getMsg(), Toast.LENGTH_SHORT).show();
-                            vaildated = true;
-                            showSuccessUI();
-                            freshSelectedText();
-                        }
-
-                        @Override
-                        public void onError(@NonNull Throwable e) {
-                            if (e instanceof ServiceMsgException) {
-                                Toasty.error(OrderActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toasty.error(OrderActivity.this, getString(R.string.netconnect_exception), Toast.LENGTH_SHORT).show();
-                            }
-                            Log.d(TAG, e.toString());
-
-                        }
-
-                        @Override
-                        public void onComplete() {
-
-                        }
-                    });
-
+            fetchCoupon(input,true);
         }
 
+    }
+
+    private void fetchCoupon(final String input,final boolean needCheck) {
+        final ArrayList<Coupon> tmpCoupon = new ArrayList<>();
+        Observable.just(commonParam)
+                .map(new Function<CommonParam, DiscountReq>() {
+                    @Override
+                    public DiscountReq apply(@NonNull CommonParam param) throws Exception {
+                        return getDiscountReq(input,needCheck);
+                    }
+                })
+                .flatMap(new Function<DiscountReq, ObservableSource<DiscountRes>>() {
+                    @Override
+                    public ObservableSource<DiscountRes> apply(@NonNull DiscountReq discountReq) throws Exception {
+                        return fastIndexOrderSevice.getDiscount(gson.toJson(discountReq));
+                    }
+                })
+                .doOnNext(new Consumer<DiscountRes>() {
+                    @Override
+                    public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                        if (discountRes.getErrcode() != 1) {
+                            throw new ServiceMsgException(discountRes.getMsg());
+                        }
+                    }
+                })
+                .doOnNext(new Consumer<DiscountRes>() {
+                    @Override
+                    public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                        if (discountRes.getData().getBonus() != null && discountRes.getData().getBonus().size() != 0) {
+                            double thePrice = getFianlPrice();
+                            for (DiscountRes.DataBean.BonusBean bean : discountRes.getData().getBonus()) {
+                                Bouns bouns = new Bouns(Bouns.BOUNS);
+                                bouns.setSpannableString(SpannableUtil.discountSpan(bean.getMoney()));
+                                bouns.setMoney(bean.getMoney());
+                                bouns.setBonus_id(bean.getBonus_id());
+                                bouns.setEffective_date(bean.getEffective_date());
+                                bouns.setTitle(bean.getTitle());
+                                bouns.setIntro(bean.getIntro());
+                                bouns.setUnavailableReason("面额大于实付金额");
+                                if(thePrice <= bouns.getMoney()){
+                                    bouns.setAvailable(false);
+                                }else {
+                                    bouns.setAvailable(true);
+                                }
+                                bounsFragment.addBouns(bouns);
+                            }
+                        }
+                    }
+                })
+                .doOnNext(new Consumer<DiscountRes>() {
+                    @Override
+                    public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                        addEnableCoupon(discountRes, tmpCoupon);
+                    }
+                })
+                .doOnNext(new Consumer<DiscountRes>() {
+                    @Override
+                    public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                        addUnableCoupon(discountRes, tmpCoupon);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doFinally(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        ProgressDialogUtil.hide();
+                    }
+                })
+                .subscribe(new Observer<DiscountRes>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        disposables.add(d);
+                        ProgressDialogUtil.show(OrderActivity.this);
+                    }
+
+                    @Override
+                    public void onNext(@NonNull DiscountRes discountRes) {
+                        couponFragment.setCoupons(tmpCoupon);
+                        Toasty.success(OrderActivity.this, discountRes.getMsg(), Toast.LENGTH_SHORT).show();
+                        vaildated = true;
+                        showSuccessUI();
+                        freshSelectedText();
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        if (e instanceof ServiceMsgException) {
+                            Toasty.error(OrderActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toasty.error(OrderActivity.this, getString(R.string.netconnect_exception), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+    }
+
+    private void addUnableCoupon(@NonNull DiscountRes discountRes, ArrayList<Coupon> tmpCoupon) {
+        final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
+        if (couponsBean != null && couponsBean.getUNUSABLE() != null && couponsBean.getUNUSABLE().size() != 0) {
+            Coupon title = new Coupon(Coupon.TITLE);
+            title.setEnable(false);
+            title.setCount(couponsBean.getUNUSABLE().size());
+            tmpCoupon.add(title);
+            for (int index = 0; index < couponsBean.getUNUSABLE().size(); index++) {
+                CouponBean res = couponsBean.getUNUSABLE().get(index);
+                Coupon coupon = new Coupon(Coupon.COUPON);
+                coupon.setEnable(false);
+                CouponUtil.initCoupon(res,coupon);
+                tmpCoupon.add(coupon);
+            }
+        }
     }
 
     private DiscountReq getDiscountReq(String input,boolean needCheckCode) {
@@ -686,7 +671,6 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         for (Bouns bouns : bounsFragment.getBounses()){
                             if (bouns.isUsed()){
                                 dataBean.setBonusNumber(bouns.getBonus_id());
-
                             }
                         }
 
@@ -714,19 +698,15 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                 .doOnNext(new Consumer<OwnpayRes>() {
                     @Override
                     public void accept(@NonNull OwnpayRes ownpayRes) throws Exception {
-                        if (ownpayRes.getErrcode() != 1) {
+                        if(ownpayRes.getCoupons_errcode() == 1){
+                            throw new CouponErrorException(ownpayRes.getMsg());
+                        }else if(ownpayRes.getErrcode() != 1){
                             throw new ServiceMsgException(ownpayRes.getMsg());
                         }
                     }
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doFinally(new Action() {
-                    @Override
-                    public void run() throws Exception {
-                        ProgressDialogUtil.hide();
-                    }
-                })
                 .subscribe(new Observer<OwnpayRes>() {
                     @Override
                     public void onSubscribe(@NonNull Disposable d) {
@@ -748,16 +728,22 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                         startActivity(intent);
                         ShoppingCartMgr.getInstance().clear();
                         ShoppingCartMgr.getInstance().setColumns(null);
+                        ProgressDialogUtil.hide();
                     }
 
                     @Override
                     public void onError(@NonNull Throwable e) {
+
                         if (e instanceof ServiceMsgException) {
                             CustomAlertDialog customAlertDialog = new CustomAlertDialog();
                             customAlertDialog.setMsgInfo(e.getMessage());
                             customAlertDialog.show(getFragmentManager(), "customAlertDialog");
+                            ProgressDialogUtil.hide();
+                        } else if(e instanceof CouponErrorException){
+                            fetchCouponAgain(e.getMessage());
                         } else {
                             Toasty.error(OrderActivity.this, getString(R.string.netconnect_exception), Toast.LENGTH_SHORT).show();
+                            ProgressDialogUtil.hide();
                         }
                     }
 
@@ -766,6 +752,181 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
 
                     }
                 });
+    }
+
+    private void fetchCouponAgain(final String e) {
+        if(isVaildate()){
+            final ArrayList<Coupon> tmpCoupon = new ArrayList<>();
+            Observable.just(commonParam)
+                    .map(new Function<CommonParam, DiscountReq>() {
+                        @Override
+                        public DiscountReq apply(@NonNull CommonParam param) throws Exception {
+                            return getDiscountReq(null,false);
+                        }
+                    })
+                    .flatMap(new Function<DiscountReq, ObservableSource<DiscountRes>>() {
+                        @Override
+                        public ObservableSource<DiscountRes> apply(@NonNull DiscountReq discountReq) throws Exception {
+                            return slowIndexOrderSevice.getDiscount(gson.toJson(discountReq));
+                        }
+                    })
+                    .doOnNext(new Consumer<DiscountRes>() {
+                        @Override
+                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                            if (discountRes.getErrcode() != 1) {
+                                throw new ServiceMsgException(discountRes.getMsg());
+                            }
+                        }
+                    })
+                    .doOnNext(new Consumer<DiscountRes>() {
+                        @Override
+                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                            addEnableCoupon(discountRes, tmpCoupon);
+                        }
+                    })
+                    .doOnNext(new Consumer<DiscountRes>() {
+                        @Override
+                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                            addUnableCoupon(discountRes, tmpCoupon);
+                        }
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doFinally(new Action() {
+                        @Override
+                        public void run() throws Exception {
+                            ProgressDialogUtil.hide();
+                        }
+                    })
+                    .subscribe(new Observer<DiscountRes>() {
+                        @Override
+                        public void onSubscribe(@NonNull Disposable d) {
+                            disposables.add(d);
+                            ProgressDialogUtil.show(OrderActivity.this);
+                        }
+
+                        @Override
+                        public void onNext(@NonNull DiscountRes discountRes) {
+                            couponFragment.setCoupons(tmpCoupon);
+                            freshSelectedText();
+                            CustomAlertDialog customAlertDialog = new CustomAlertDialog();
+                            customAlertDialog.setMsgInfo(e);
+                            customAlertDialog.show(getFragmentManager(), "customAlertDialog");
+                            customAlertDialog.setAction(new CustomAlertDialog.Action() {
+                                @Override
+                                public void process() {
+
+                                }
+
+                                @Override
+                                public void close() {
+                                    couponFragment.show(getFragmentManager(),"coupon");
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onError(@NonNull Throwable e) {
+
+                        }
+
+                        @Override
+                        public void onComplete() {
+
+                        }
+                    });
+
+        }else{
+            final ArrayList<Coupon> tmpCoupon = new ArrayList<>();
+            Observable.just(getDiscountReq())
+                    .flatMap(new Function<DiscountReq, ObservableSource<ExchangecouponRes>>() {
+                        @Override
+                        public ObservableSource<ExchangecouponRes> apply(@NonNull DiscountReq discountReq) throws Exception {
+                            Gson gson = new Gson();
+                            return slowIndexOrderSevice.onCouponError(gson.toJson(discountReq));
+                        }
+                    })
+                    .doOnNext(new Consumer<ExchangecouponRes>() {
+                        @Override
+                        public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                            if(exchangecouponRes.getErrcode() != 1){
+                                throw new ServiceMsgException(exchangecouponRes.getMsg());
+                            }else if(exchangecouponRes.getData().getCoupons() == null || exchangecouponRes.getData().getCoupons().getUSABLE().size() == 0){
+                                throw new ServiceDataException();
+                            }
+                        }
+                    })
+                    .doOnNext(new Consumer<ExchangecouponRes>() {
+                        @Override
+                        public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                            ExchangecouponRes.DataBean.CouponsBean couponsBean = exchangecouponRes.getData().getCoupons();
+                            final ArrayList<CouponBean> res = (ArrayList<CouponBean>) couponsBean.getUSABLE();
+                            addCoupon(res,true, tmpCoupon);
+                        }
+                    })
+                    .doOnNext(new Consumer<ExchangecouponRes>() {
+                        @Override
+                        public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                            ExchangecouponRes.DataBean.CouponsBean couponsBean = exchangecouponRes.getData().getCoupons();
+                            final ArrayList<CouponBean> res = (ArrayList<CouponBean>) couponsBean.getUNUSABLE();
+                            addCoupon(res,false, tmpCoupon);
+                        }
+                    });
+        }
+    }
+
+    private void addCoupon(ArrayList<CouponBean> res, boolean useable,ArrayList<Coupon> tmpCoupon) {
+        if(res != null && res.size() != 0){
+            Coupon title = new Coupon(Coupon.TITLE);
+            if(useable){
+                title.setEnable(true);
+            }
+            title.setCount(res.size());
+            tmpCoupon.add(title);
+            for (int index = 0; index < res.size(); index++) {
+                CouponBean data = res.get(index);
+                Coupon coupon = new Coupon(Coupon.COUPON);
+                CouponUtil.initCoupon(data, coupon);
+                if(useable){
+                    coupon.setAvailable(true);
+                    coupon.setEnable(true);
+                }
+                tmpCoupon.add(coupon);
+            }
+            if(useable){
+                Coupon disable = new Coupon(Coupon.DISABLE);
+                disable.setEnable(true);
+                tmpCoupon.add(disable);
+            }
+        }
+    }
+
+    private void addEnableCoupon(@NonNull DiscountRes discountRes, ArrayList<Coupon> tmpCoupon) {
+        final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
+        if (couponsBean != null && couponsBean.getUSABLE() != null && couponsBean.getUSABLE().size() != 0) {
+            Coupon title = new Coupon(Coupon.TITLE);
+            title.setEnable(true);
+            title.setCount(couponsBean.getUSABLE().size());
+            tmpCoupon.add(title);
+            double thePrice = getFianlPrice();
+            for (int index = 0; index < couponsBean.getUSABLE().size(); index++) {
+                CouponBean res = couponsBean.getUSABLE().get(index);
+                Coupon coupon = new Coupon(Coupon.COUPON);
+                if(thePrice <= coupon.getReduce_money()){
+                    coupon.setPriceAvailable(false);
+                    coupon.setUnavailableReason("面额大于实付金额");
+                }else {
+                    coupon.setPriceAvailable(true);
+                }
+                coupon.setEnable(true);
+                coupon.setAvailable(true);
+                CouponUtil.initCoupon(res, coupon);
+                tmpCoupon.add(coupon);
+            }
+            Coupon disable = new Coupon(Coupon.DISABLE);
+            disable.setEnable(true);
+            tmpCoupon.add(disable);
+        }
     }
 
     private class MyTimer extends CountDownTimer {
@@ -927,11 +1088,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
                 usedCount ++;
             }
             if(coupon.isEnable() && coupon.getItemType() == Coupon.COUPON){
-
                 if(coupon.isAvailable() && coupon.isPriceAvailable()){
-                    avaliable = true;
-                    avaliableCount ++;
-                }else if(coupon.isPriceAvailable()){
                     avaliable = true;
                     avaliableCount ++;
                 }
@@ -1012,7 +1169,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     @Override
     public void onSelectBouns() {
         setMoney();
-        couponFragment.onSelectedItemChange();
+        couponFragment.onSelectedItemChange(couponFragment.getCoupons());
         giftcardFragment.onSelectedItemChange();
         freshSelectedText();
     }
@@ -1042,7 +1199,7 @@ public class OrderActivity extends AppCompatActivity implements OrderPrice,Coupo
     @Override
     public void onSelectedGift() {
         setMoney();
-        couponFragment.onSelectedItemChange();
+        couponFragment.onSelectedItemChange(couponFragment.getCoupons());
         bounsFragment.onSelectedItemChange();
         freshSelectedText();
     }

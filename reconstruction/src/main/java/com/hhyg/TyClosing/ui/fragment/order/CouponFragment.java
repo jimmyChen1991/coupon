@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +25,7 @@ import com.hhyg.TyClosing.entities.order.DiscountRes;
 import com.hhyg.TyClosing.entities.order.ExchangecouponReq;
 import com.hhyg.TyClosing.entities.order.ExchangecouponRes;
 import com.hhyg.TyClosing.entities.order.Giftcard;
+import com.hhyg.TyClosing.exceptions.ServiceDataException;
 import com.hhyg.TyClosing.exceptions.ServiceMsgException;
 import com.hhyg.TyClosing.mgr.OrderPrice;
 import com.hhyg.TyClosing.ui.adapter.order.BounsAdapter;
@@ -48,6 +50,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 
@@ -57,6 +60,7 @@ import io.reactivex.schedulers.Schedulers;
 
 public class CouponFragment extends BaseBottomDialogFragment {
 
+    private static final String TAG = "CouponFragment";
     @BindView(R.id.coupon_id)
     EditText couponId;
     @BindView(R.id.empty_view)
@@ -73,6 +77,7 @@ public class CouponFragment extends BaseBottomDialogFragment {
     private CouponAdapter adapter;
     private CouponOp couponOp;
     private OrderPrice orderPrice;
+    private ArrayList<Coupon> tmpCoupon = new ArrayList<>();
 
     public ArrayList<Coupon> getCoupons() {
         return coupons;
@@ -107,9 +112,9 @@ public class CouponFragment extends BaseBottomDialogFragment {
         return R.layout.dialog_coupon;
     }
 
-    public synchronized void onSelectedItemChange(){
+    public synchronized void onSelectedItemChange(ArrayList<Coupon> couponArrayList){
         double thePrice = orderPrice.getFianlPrice();
-        for (Coupon coupon : coupons){
+        for (Coupon coupon : couponArrayList){
             if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable()){
                 if(!coupon.isUsed() && thePrice < coupon.getReduce_money()){
                     coupon.setPriceAvailable(false);
@@ -159,13 +164,14 @@ public class CouponFragment extends BaseBottomDialogFragment {
                             bean.setAvailable(true);
                         }
                     }
-                    onSelectedItemChange();
+                    calaDisable(true);
+                    onSelectedItemChange(coupons);
                     couponOp.onSelectedCoupon();
                 }else if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable()){
                     if(coupon.isAvailable() && coupon.isPriceAvailable()){
                         if(coupon.isUsed()){
                             coupon.setUsed(false);
-                            onSelectedItemChange();
+                            onSelectedItemChange(coupons);
                             couponOp.onSelectedCoupon();
                             if(coupon.getIsEntire() == 1){
                                 for (Coupon bean : coupons){
@@ -221,39 +227,11 @@ public class CouponFragment extends BaseBottomDialogFragment {
                             }
 
                         }else {
-                            coupon.setUsed(true);
-                            onSelectedItemChange();
-                            couponOp.onSelectedCoupon();
-                            if(coupon.getIsEntire() == 1){
-                                for (Coupon bean : coupons){
-                                    if(bean.getItemType() == Coupon.COUPON && bean.isEnable() && bean.isAvailable()){
-                                        bean.setAvailable(false);
-                                        bean.setUnavailableReason("与已选优惠券商品范围重叠");
-                                    }
-                                }
-                                coupon.setAvailable(true);
-                            }else{
-                                if(coupon.getConflict() != null && coupon.getConflict().size() != 0){
-                                    for (String conflict : coupon.getConflict()){
-                                        if(!conflict.equals(coupon.getCode_str())){
-                                            for (Coupon bean : coupons){
-                                                if((bean.getItemType() == Coupon.COUPON  && bean.isEnable() && bean.getCode_str().equals(conflict) && !bean.isUsed()) || (bean.getIsEntire() == 1)){
-                                                    bean.setAvailable(false);
-                                                    bean.setUnavailableReason("与已选优惠券商品范围重叠");
-                                                }
-
-                                            }
-
-                                        }
-                                    }
-                                }
-
-                            }
-
+                            makeCouponUsed(coupon,coupons,false);
                         }
+                        calaDisable(false);
                     }
                 }
-                calaDisable();
                 adapter.notifyDataSetChanged();
                 couponOp.calaAvaliable();
             }
@@ -268,14 +246,7 @@ public class CouponFragment extends BaseBottomDialogFragment {
         }
     }
 
-    private void calaDisable(){
-        boolean disable = true;
-        for (Coupon coupon : coupons){
-            if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable() && coupon.isUsed()){
-                disable = false;
-                break;
-            }
-        }
+    private void calaDisable(boolean disable){
         if(disable){
             for (Coupon coupon : coupons){
                 if(coupon.getItemType() == Coupon.DISABLE){
@@ -330,134 +301,317 @@ public class CouponFragment extends BaseBottomDialogFragment {
     @OnClick(R.id.check_coupon)
     public void onViewClicked1(){
         if(TextUtils.isEmpty(couponId.getText().toString())){
-            Toasty.warning(getActivity(),"请输入优惠券", Toast.LENGTH_SHORT).show();
+            Toasty.warning(getActivity(),"请输入兑换码", Toast.LENGTH_SHORT).show();
         }else{
-            final ArrayList<Coupon> tmpCoupon = new ArrayList<>();
-            Observable.just(couponId.getText().toString())
-                    .map(new Function<String, ExchangecouponReq>() {
-                        @Override
-                        public ExchangecouponReq apply(@NonNull String s) throws Exception {
-                            ExchangecouponReq req = new ExchangecouponReq();
-                            req.setChannel(commonParam.getChannelId());
-                            req.setImei(commonParam.getImei());
-                            req.setPlatformId(commonParam.getPlatformId());
-                            req.setShopid(commonParam.getShopId());
-                            return req;
-                        }
-                    })
-                    .flatMap(new Function<ExchangecouponReq, ObservableSource<ExchangecouponRes>>() {
-                        @Override
-                        public ObservableSource<ExchangecouponRes> apply(@NonNull ExchangecouponReq exchangecouponReq) throws Exception {
-                            Gson gson = new Gson();
-                            return indexSevice.exchangeCoupon(gson.toJson(exchangecouponReq));
-                        }
-                    })
-                    .doOnNext(new Consumer<ExchangecouponRes>() {
-                        @Override
-                        public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
-                            if(exchangecouponRes.getErrcode() != 1){
-                                throw new ServiceMsgException(exchangecouponRes.getMsg());
+            if(couponOp.isVaildate()){
+                Observable.just(couponOp.getDiscountReq())
+                        .map(new Function<DiscountReq, ExchangecouponReq>() {
+                            @Override
+                            public ExchangecouponReq apply(@NonNull DiscountReq discountReq) throws Exception {
+                                return getExchangecouponReq(discountReq);
                             }
-                        }
-                    })
-                    .map(new Function<ExchangecouponRes, DiscountReq>() {
-                        @Override
-                        public DiscountReq apply(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
-                            return couponOp.getDiscountReq();
-                        }
-                    })
-                    .flatMap(new Function<DiscountReq, ObservableSource<DiscountRes>>() {
-                        @Override
-                        public ObservableSource<DiscountRes> apply(@NonNull DiscountReq discountReq) throws Exception {
-                            Gson gson = new Gson();
-                            return indexSevice.getDiscount(gson.toJson(discountReq));
-                        }
-                    })
-                    .doOnNext(new Consumer<DiscountRes>() {
-                        @Override
-                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            if(discountRes.getErrcode() != 1){
-                                throw new ServiceMsgException(discountRes.getMsg());
+                        })
+                        .flatMap(new Function<ExchangecouponReq, ObservableSource<ExchangecouponRes>>() {
+                            @Override
+                            public ObservableSource<ExchangecouponRes> apply(@NonNull ExchangecouponReq exchangecouponReq) throws Exception {
+                                Gson gson = new Gson();
+                                return indexSevice.exchangeCoupon(gson.toJson(exchangecouponReq));
                             }
-                        }
-                    })
-                    .doOnNext(new Consumer<DiscountRes>() {
-                        @Override
-                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
-                            if (couponsBean != null && couponsBean.getUSABLE() != null && couponsBean.getUSABLE().size() != 0) {
-                                Coupon title = new Coupon(Coupon.TITLE);
-                                title.setEnable(true);
-                                title.setCount(couponsBean.getUSABLE().size());
-                                tmpCoupon.add(title);
-                                for (int index = 0; index < couponsBean.getUSABLE().size(); index++) {
-                                    CouponBean res = couponsBean.getUSABLE().get(index);
-                                    Coupon coupon = new Coupon(Coupon.COUPON);
-                                    CouponUtil.initCoupon(res, coupon);
-                                    tmpCoupon.add(coupon);
-                                }
-                                Coupon disable = new Coupon(Coupon.DISABLE);
-                                disable.setEnable(true);
-                                tmpCoupon.add(disable);
-                            }
-                        }
-                    })
-                    .doOnNext(new Consumer<DiscountRes>() {
-                        @Override
-                        public void accept(@NonNull DiscountRes discountRes) throws Exception {
-                            final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
-                            if (couponsBean != null && couponsBean.getUNUSABLE() != null && couponsBean.getUNUSABLE().size() != 0) {
-                                Coupon title = new Coupon(Coupon.TITLE);
-                                title.setEnable(false);
-                                title.setCount(couponsBean.getUNUSABLE().size());
-                                tmpCoupon.add(title);
-                                for (int index = 0; index < couponsBean.getUNUSABLE().size(); index++) {
-                                    CouponBean res = couponsBean.getUNUSABLE().get(index);
-                                    Coupon coupon = new Coupon(Coupon.COUPON);
-                                    coupon.setEnable(false);
-                                    CouponUtil.initCoupon(res,coupon);
-                                    tmpCoupon.add(coupon);
+                        })
+                        .doOnNext(new Consumer<ExchangecouponRes>() {
+                            @Override
+                            public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                                if(exchangecouponRes.getErrcode() != 1){
+                                    throw new ServiceMsgException(exchangecouponRes.getMsg());
                                 }
                             }
-                        }
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doFinally(new Action() {
-                        @Override
-                        public void run() throws Exception {
-                            ProgressDialogUtil.hide();
-                        }
-                    })
-                    .subscribe(new Observer<DiscountRes>() {
-                        @Override
-                        public void onSubscribe(@NonNull Disposable d) {
-                            disposable = d;
-                            ProgressDialogUtil.show(getActivity());
-                        }
-
-                        @Override
-                        public void onNext(@NonNull DiscountRes discountRes) {
-                            coupons = tmpCoupon;
-                            adapter.notifyDataSetChanged();
-                        }
-
-                        @Override
-                        public void onError(@NonNull Throwable e) {
-                            if(e instanceof ServiceMsgException){
-                                Toasty.error(getActivity(),e.getMessage(),Toast.LENGTH_SHORT).show();
-                            }else {
-                                Toasty.error(getActivity(),getActivity().getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                        })
+                        .map(new Function<ExchangecouponRes, DiscountReq>() {
+                            @Override
+                            public DiscountReq apply(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                                return couponOp.getDiscountReq();
                             }
+                        })
+                        .flatMap(new Function<DiscountReq, ObservableSource<DiscountRes>>() {
+                            @Override
+                            public ObservableSource<DiscountRes> apply(@NonNull DiscountReq discountReq) throws Exception {
+                                Gson gson = new Gson();
+                                return indexSevice.getDiscount(gson.toJson(discountReq));
+                            }
+                        })
+                        .doOnNext(new Consumer<DiscountRes>() {
+                            @Override
+                            public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                                final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
+                                addCoupon((ArrayList<CouponBean>) couponsBean.getUSABLE(),true);
+                            }
+                        })
+                        .doOnNext(new Consumer<DiscountRes>() {
+                            @Override
+                            public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                                final DiscountRes.DataBean.CouponsBean couponsBean = discountRes.getData().getCoupons();
+                               addCoupon((ArrayList<CouponBean>) couponsBean.getUNUSABLE(),false);
+                            }
+                        })
+                        .doOnNext(new Consumer<DiscountRes>() {
+                            @Override
+                            public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                                initAvailable();
+                            }
+                        })
+                        .doOnNext(new Consumer<DiscountRes>() {
+                            @Override
+                            public void accept(@NonNull DiscountRes discountRes) throws Exception {
+                                setExchangedCouponUsed();
+                            }
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doFinally(new Action() {
+                            @Override
+                            public void run() throws Exception {
+                                ProgressDialogUtil.hide();
+                                tmpCoupon.clear();
+                            }
+                        })
+                        .subscribe(new Observer<DiscountRes>() {
+                            @Override
+                            public void onSubscribe(@NonNull Disposable d) {
+                                disposable = d;
+                                ProgressDialogUtil.show(getActivity());
+                            }
+
+                            @Override
+                            public void onNext(@NonNull DiscountRes discountRes) {
+                                coupons = (ArrayList<Coupon>) tmpCoupon.clone();
+                                onSelectedItemChange(coupons);
+                                couponOp.calaAvaliable();
+                                adapter.setNewData(coupons);
+                                adapter.notifyDataSetChanged();
+                            }
+
+                            @Override
+                            public void onError(@NonNull Throwable e) {
+                                if(e instanceof ServiceMsgException){
+                                    Toasty.error(getActivity(),e.getMessage(),Toast.LENGTH_SHORT).show();
+                                }else {
+                                    Toasty.error(getActivity(),getActivity().getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                                }
+                                printErr(e);
+                            }
+
+                            @Override
+                            public void onComplete() {
+
+                            }
+                        });
+
+            }else{
+                Observable.just(couponOp.getDiscountReq())
+                        .map(new Function<DiscountReq, ExchangecouponReq>() {
+                            @Override
+                            public ExchangecouponReq apply(@NonNull DiscountReq discountReq) throws Exception {
+                                return getExchangecouponReq(discountReq);
+                            }
+                        })
+                        .flatMap(new Function<ExchangecouponReq, ObservableSource<ExchangecouponRes>>() {
+                            @Override
+                            public ObservableSource<ExchangecouponRes> apply(@NonNull ExchangecouponReq exchangecouponReq) throws Exception {
+                                Gson gson = new Gson();
+                                return indexSevice.exchangeCoupon(gson.toJson(exchangecouponReq));
+                            }
+                        })
+                        .doOnNext(new Consumer<ExchangecouponRes>() {
+                            @Override
+                            public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                                if(exchangecouponRes.getErrcode() != 1){
+                                    throw new ServiceMsgException(exchangecouponRes.getMsg());
+                                }else if(exchangecouponRes.getData().getCoupons() == null || exchangecouponRes.getData().getCoupons().getUSABLE().size() == 0){
+                                    throw new ServiceDataException();
+                                }
+                            }
+                        })
+                        .doOnNext(new Consumer<ExchangecouponRes>() {
+                            @Override
+                            public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                                ExchangecouponRes.DataBean.CouponsBean couponsBean = exchangecouponRes.getData().getCoupons();
+                                final ArrayList<CouponBean> res = (ArrayList<CouponBean>) couponsBean.getUSABLE();
+                                addCoupon(res,true);
+                            }
+                        })
+                        .doOnNext(new Consumer<ExchangecouponRes>() {
+                            @Override
+                            public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                                ExchangecouponRes.DataBean.CouponsBean couponsBean = exchangecouponRes.getData().getCoupons();
+                                final ArrayList<CouponBean> res = (ArrayList<CouponBean>) couponsBean.getUNUSABLE();
+                                addCoupon(res,false);
+                            }
+                        })
+                        .doOnNext(new Consumer<ExchangecouponRes>() {
+                            @Override
+                            public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                                initAvailable();
+                            }
+                        })
+                        .doOnNext(new Consumer<ExchangecouponRes>() {
+                            @Override
+                            public void accept(@NonNull ExchangecouponRes exchangecouponRes) throws Exception {
+                                setExchangedCouponUsed();
+                            }
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doFinally(new Action() {
+                            @Override
+                            public void run() throws Exception {
+                                ProgressDialogUtil.hide();
+                                tmpCoupon.clear();
+                            }
+                        })
+                        .subscribe(new Observer<ExchangecouponRes>() {
+                            @Override
+                            public void onSubscribe(@NonNull Disposable d) {
+                                disposable = d;
+                                ProgressDialogUtil.show(getActivity());
+                            }
+
+                            @Override
+                            public void onNext(@NonNull ExchangecouponRes exchangecouponRes) {
+                                Toasty.success(getActivity(),exchangecouponRes.getMsg(),Toast.LENGTH_SHORT).show();
+                                if(tmpCoupon != null && tmpCoupon.size() != 0){
+                                    rvWrap.setVisibility(View.VISIBLE);
+                                    emptyView.setVisibility(View.GONE);
+                                    coupons = (ArrayList<Coupon>) tmpCoupon.clone();
+                                    onSelectedItemChange(coupons);
+                                    couponOp.calaAvaliable();
+                                    adapter.setNewData(coupons);
+                                    adapter.notifyDataSetChanged();
+                                }
+                            }
+
+                            @Override
+                            public void onError(@NonNull Throwable e) {
+                                if(e instanceof ServiceMsgException){
+                                    Toasty.error(getActivity(),e.getMessage(),Toast.LENGTH_SHORT).show();
+                                }else if(e instanceof ServiceDataException){
+                                    Toasty.error(getActivity(),getString(R.string.server_exception),Toast.LENGTH_SHORT).show();
+                                }else{
+                                    Toasty.error(getActivity(),getString(R.string.netconnect_exception),Toast.LENGTH_SHORT).show();
+                                }
+                                Log.d("CouponFragment", e.toString());
+
+                            }
+
+                            @Override
+                            public void onComplete() {
+
+                            }
+                        });
+            }
+        }
+    }
+
+    private void setExchangedCouponUsed() {
+        if(tmpCoupon.size() != 0){
+            for (Coupon coupon : tmpCoupon){
+                if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable() && coupon.getCode_str().equals(couponId.getText().toString())){
+                    if(coupon.isAvailable() && coupon.isPriceAvailable()){
+                        makeCouponUsed(coupon,tmpCoupon,false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void initAvailable() {
+        if(coupons.size() != 0){
+            Log.d("CouponFragment", "next4");
+            for (Coupon coupon : coupons){
+                if(coupon.getItemType() == Coupon.COUPON && coupon.isEnable() && coupon.isUsed()){
+                    for (Coupon tmpBean : tmpCoupon){
+                        if(tmpBean.isEnable() && tmpBean.getItemType() == Coupon.COUPON && tmpBean.getCode_str().equals(coupon.getCode_str())){
+                            makeCouponUsed(tmpBean,tmpCoupon,false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void makeCouponUsed(Coupon coupon,ArrayList<Coupon> couponArrayList,boolean forinit) {
+        coupon.setUsed(true);
+        if(!forinit){
+            onSelectedItemChange(couponArrayList);
+            couponOp.onSelectedCoupon();
+        }
+        if(coupon.getIsEntire() == 1){
+            for (Coupon bean : couponArrayList){
+                if(bean.getItemType() == Coupon.COUPON && bean.isEnable() && bean.isAvailable()){
+                    bean.setAvailable(false);
+                    bean.setUnavailableReason("与已选优惠券商品范围重叠");
+                }
+            }
+            coupon.setAvailable(true);
+        }else{
+            if(coupon.getConflict() != null && coupon.getConflict().size() != 0){
+                for (String conflict : coupon.getConflict()){
+                    if(!conflict.equals(coupon.getCode_str())){
+                        for (Coupon bean : couponArrayList){
+                            if((bean.getItemType() == Coupon.COUPON  && bean.isEnable() && bean.getCode_str().equals(conflict) && !bean.isUsed()) || (bean.isEnable() && bean.getItemType() == Coupon.COUPON&& bean.getIsEntire() == 1)){
+                                bean.setAvailable(false);
+                                bean.setUnavailableReason("与已选优惠券商品范围重叠");
+                            }
+
                         }
 
-                        @Override
-                        public void onComplete() {
-
-                        }
-                    });
+                    }
+                }
+            }
 
         }
+    }
+
+    private void addCoupon(ArrayList<CouponBean> res,boolean useable) {
+        if(res != null && res.size() != 0){
+            Coupon title = new Coupon(Coupon.TITLE);
+            if(useable){
+                title.setEnable(true);
+            }
+            title.setCount(res.size());
+            tmpCoupon.add(title);
+            for (int index = 0; index < res.size(); index++) {
+                CouponBean data = res.get(index);
+                Coupon coupon = new Coupon(Coupon.COUPON);
+                CouponUtil.initCoupon(data, coupon);
+                if(useable){
+                    coupon.setAvailable(true);
+                    coupon.setEnable(true);
+                }
+                tmpCoupon.add(coupon);
+            }
+            if(useable){
+                Coupon disable = new Coupon(Coupon.DISABLE);
+                disable.setEnable(true);
+                tmpCoupon.add(disable);
+            }
+        }
+    }
+
+    @android.support.annotation.NonNull
+    private ExchangecouponReq getExchangecouponReq(@NonNull DiscountReq discountReq) {
+        ExchangecouponReq req = new ExchangecouponReq();
+        req.setChannel(commonParam.getChannelId());
+        req.setImei(commonParam.getImei());
+        req.setPlatformId(commonParam.getPlatformId());
+        req.setShopid(commonParam.getShopId());
+        ExchangecouponReq.DataBean data = new ExchangecouponReq.DataBean();
+        data.setExchangecode(couponId.getText().toString());
+        data.setGoodslist(discountReq.getData().getGoodslist());
+        data.setDeliverplace(discountReq.getData().getDeliverplace());
+        data.setFinal_total_price(discountReq.getData().getFinal_total_price());
+        data.setMobile_phone(discountReq.getData().getMobile_phone());
+        req.setData(data);
+        return req;
     }
 
     @OnClick(R.id.use_coupon)
@@ -476,4 +630,9 @@ public class CouponFragment extends BaseBottomDialogFragment {
         boolean isVaildate();
     }
 
+    private void printErr(@NonNull Throwable e) {
+        for (int index = 0; index < e.getStackTrace().length; index++) {
+            Log.d(TAG, e.getStackTrace()[index].toString());
+        }
+    }
 }
