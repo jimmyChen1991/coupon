@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.neenbedankt.android-apt'
 apply plugin: 'realm-android'
 android {
-    compileSdkVersion 25
+    compileSdkVersion 21
     buildToolsVersion "25.0.2"
     aaptOptions { cruncherEnabled = false }
     defaultConfig {
